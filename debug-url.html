@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug URL Parameters</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { border-color: #4CAF50; background: #f1f8e9; }
+        .error { border-color: #f44336; background: #ffebee; }
+        .info { border-color: #2196F3; background: #e3f2fd; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug URL Parameters</h1>
+        
+        <div class="test-section info">
+            <h3>Current URL Information</h3>
+            <p><strong>Full URL:</strong> <span id="fullUrl"></span></p>
+            <p><strong>Search Params:</strong> <span id="searchParams"></span></p>
+            <p><strong>Parsed Params:</strong> <pre id="parsedParams"></pre></p>
+        </div>
+
+        <div class="test-section">
+            <h3>Test URL Construction</h3>
+            <button onclick="testUrlConstruction()">Test URL Construction</button>
+            <button onclick="testNavigation()">Test Navigation</button>
+            <div id="testResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Specific URL</h3>
+            <p>Testing URL: <code>http://localhost:5173/?toko_id=7450ec8e-42a1-4cc6-89f5-38be5e6da7dd&table=5</code></p>
+            <button onclick="testSpecificUrl()">Test This URL</button>
+            <div id="specificTestResults"></div>
+        </div>
+    </div>
+
+    <script>
+        // Simulate the utility functions
+        function getUrlParams() {
+            try {
+                if (typeof window === 'undefined' || !window.location) {
+                    console.warn('window.location not available, returning default params');
+                    return { toko_id: null, table: '1' };
+                }
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                return {
+                    toko_id: urlParams.get('toko_id') || urlParams.get('restaurant_id'),
+                    table: urlParams.get('table') || urlParams.get('nomor_meja') || '1'
+                };
+            } catch (error) {
+                console.error('Error getting URL params:', error);
+                return { toko_id: null, table: '1' };
+            }
+        }
+
+        function buildUrlWithParams(path, params = {}) {
+            try {
+                if (!path || typeof path !== 'string') {
+                    console.error('Invalid path provided to buildUrlWithParams:', path);
+                    return '/';
+                }
+                
+                const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+                const currentParams = getUrlParams();
+                const urlParams = new URLSearchParams();
+                
+                if (currentParams.toko_id) {
+                    urlParams.set('toko_id', currentParams.toko_id);
+                }
+                if (currentParams.table) {
+                    urlParams.set('table', currentParams.table);
+                }
+                
+                Object.entries(params).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined && value !== '') {
+                        urlParams.set(key, String(value));
+                    }
+                });
+                
+                const queryString = urlParams.toString();
+                return queryString ? `${normalizedPath}?${queryString}` : normalizedPath;
+            } catch (error) {
+                console.error('Error in buildUrlWithParams:', error);
+                return path || '/';
+            }
+        }
+
+        function displayCurrentInfo() {
+            document.getElementById('fullUrl').textContent = window.location.href;
+            document.getElementById('searchParams').textContent = window.location.search;
+            document.getElementById('parsedParams').textContent = JSON.stringify(getUrlParams(), null, 2);
+        }
+
+        function testUrlConstruction() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<h4>Test Results:</h4>';
+            
+            const testPaths = ['/', '/cart', '/checkout', '/confirmation'];
+            
+            testPaths.forEach(path => {
+                try {
+                    const url = buildUrlWithParams(path);
+                    results.innerHTML += `<div class="test-section success">
+                        <strong>${path}</strong> → <code>${url}</code> ✅
+                    </div>`;
+                } catch (error) {
+                    results.innerHTML += `<div class="test-section error">
+                        <strong>${path}</strong> → Error: ${error.message} ❌
+                    </div>`;
+                }
+            });
+        }
+
+        function testNavigation() {
+            const results = document.getElementById('testResults');
+            results.innerHTML += '<h4>Navigation Test:</h4>';
+            
+            try {
+                // Simulate navigation
+                const testUrl = buildUrlWithParams('/cart');
+                results.innerHTML += `<div class="test-section success">
+                    Navigation would go to: <code>${testUrl}</code> ✅
+                </div>`;
+            } catch (error) {
+                results.innerHTML += `<div class="test-section error">
+                    Navigation error: ${error.message} ❌
+                </div>`;
+            }
+        }
+
+        function testSpecificUrl() {
+            const results = document.getElementById('specificTestResults');
+            results.innerHTML = '<h4>Specific URL Test:</h4>';
+            
+            const testUrl = 'http://localhost:5173/?toko_id=7450ec8e-42a1-4cc6-89f5-38be5e6da7dd&table=5';
+            
+            try {
+                // Test URL parsing
+                const url = new URL(testUrl);
+                const urlParams = new URLSearchParams(url.search);
+                
+                results.innerHTML += `<div class="test-section success">
+                    <strong>URL Parsing:</strong> ✅<br>
+                    <pre>${JSON.stringify({
+                        toko_id: urlParams.get('toko_id'),
+                        table: urlParams.get('table')
+                    }, null, 2)}</pre>
+                </div>`;
+                
+                // Test UUID format
+                const tokoId = urlParams.get('toko_id');
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                
+                if (uuidRegex.test(tokoId)) {
+                    results.innerHTML += `<div class="test-section success">
+                        <strong>UUID Format:</strong> Valid ✅
+                    </div>`;
+                } else {
+                    results.innerHTML += `<div class="test-section error">
+                        <strong>UUID Format:</strong> Invalid ❌
+                    </div>`;
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<div class="test-section error">
+                    <strong>Error:</strong> ${error.message} ❌
+                </div>`;
+            }
+        }
+
+        // Initialize
+        displayCurrentInfo();
+    </script>
+</body>
+</html>

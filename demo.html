@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Aplikasi Pemesanan Restoran</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+        }
+        .demo-section h2 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        .demo-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .demo-link {
+            display: block;
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #374151;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .demo-link:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: translateY(-2px);
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+        .feature-list li:before {
+            content: "✅";
+            margin-right: 10px;
+        }
+        .qr-demo {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr-placeholder {
+            width: 200px;
+            height: 200px;
+            background: #f3f4f6;
+            border: 2px dashed #9ca3af;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .tech-tag {
+            background: #3b82f6;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ Demo Aplikasi Pemesanan Restoran</h1>
+        
+        <div class="demo-section">
+            <h2>📱 Cara Menggunakan</h2>
+            <p>Scan QR code di meja restoran untuk mengakses menu dan memesan makanan. Aplikasi ini dirancang khusus untuk pengalaman pemesanan yang mudah dan cepat.</p>
+            <p><strong>Parameter URL:</strong> Aplikasi menggunakan parameter <code>toko_id</code> dan <code>table</code> yang dibawa terus menerus saat navigasi antar halaman.</p>
+            
+            <div class="qr-demo">
+                <div class="qr-placeholder">
+                    QR Code<br>
+                    Meja 5<br>
+                    Restoran ID: 1
+                </div>
+                <p><strong>Simulasi QR Code</strong></p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🚀 Demo Links</h2>
+            <p>Klik link di bawah untuk mencoba berbagai skenario:</p>
+            
+            <div class="demo-links">
+                <a href="http://localhost:5173/?toko_id=1&table=1" class="demo-link">
+                    🍽️ Meja 1 - Warung Makan Sederhana
+                </a>
+                <a href="http://localhost:5173/?toko_id=1&table=5" class="demo-link">
+                    🍽️ Meja 5 - Warung Makan Sederhana
+                </a>
+                <a href="http://localhost:5173/?toko_id=1&table=10" class="demo-link">
+                    🍽️ Meja 10 - Warung Makan Sederhana
+                </a>
+                <a href="http://localhost:5173/?toko_id=2&table=3" class="demo-link">
+                    🍽️ Meja 3 - Restoran Lain
+                </a>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>✨ Fitur Utama</h2>
+            <ul class="feature-list">
+                <li>Menu interaktif dengan kategori</li>
+                <li>Keranjang belanja real-time</li>
+                <li>Checkout dengan informasi pelanggan</li>
+                <li>Pembayaran tunai di kasir</li>
+                <li>Konfirmasi pesanan</li>
+                <li>Responsive design untuk mobile</li>
+                <li>Floating cart button</li>
+                <li>Loading states dan animations</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h2>🛠️ Teknologi</h2>
+            <p>Aplikasi dibangun dengan teknologi modern untuk performa dan user experience yang optimal:</p>
+            <div class="tech-stack">
+                <span class="tech-tag">React 19</span>
+                <span class="tech-tag">Vite</span>
+                <span class="tech-tag">Tailwind CSS</span>
+                <span class="tech-tag">React Router</span>
+                <span class="tech-tag">Context API</span>
+                <span class="tech-tag">Responsive Design</span>
+                <span class="tech-tag">PWA Ready</span>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📱 Mobile Experience</h2>
+            <p>Aplikasi dioptimalkan untuk mobile dengan fitur-fitur khusus:</p>
+            <ul class="feature-list">
+                <li>Touch-friendly interface</li>
+                <li>Floating cart button</li>
+                <li>Bottom navigation</li>
+                <li>Full-screen experience</li>
+                <li>Fast loading</li>
+                <li>Offline capability</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎯 User Flow</h2>
+            <ol style="line-height: 1.8; color: #374151;">
+                <li><strong>Scan QR Code</strong> → Buka aplikasi dengan parameter restoran & meja</li>
+                <li><strong>Browse Menu</strong> → Lihat menu dengan filter kategori</li>
+                <li><strong>Add to Cart</strong> → Tambah item ke keranjang</li>
+                <li><strong>Review Cart</strong> → Cek pesanan di keranjang</li>
+                <li><strong>Checkout</strong> → Isi informasi pelanggan</li>
+                <li><strong>Payment</strong> → Bayar tunai di kasir</li>
+                <li><strong>Confirmation</strong> → Terima konfirmasi pesanan</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 14px;">
+                Dibuat dengan ❤️ untuk kemudahan pemesanan restoran<br>
+                <strong>Pastikan development server berjalan di localhost:5173</strong>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
