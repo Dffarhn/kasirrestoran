@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Layout/Header';
 import MenuPage from './pages/MenuPage';
 import CartPage from './pages/CartPage';
@@ -9,11 +9,28 @@ import FloatingCartButton from './components/UI/FloatingCartButton';
 import { CartProvider } from './context/CartContext';
 import { RestaurantProvider } from './context/RestaurantContext';
 
+// Scroll to top component
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    // Smooth scroll to top when route changes
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    });
+  }, [pathname]);
+
+  return null;
+};
+
 function App() {
   return (
     <RestaurantProvider>
       <CartProvider>
         <Router>
+          <ScrollToTop />
           <div className="min-h-screen bg-[#0D0D0D]">
             <Header />
             <main className="pb-20">

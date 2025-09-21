@@ -29,12 +29,12 @@ const FeaturedMenuCard = ({ item }) => {
       </div>
 
       {/* Mobile Layout */}
-      <div className="block md:hidden">
+      <div className="block lg:hidden">
         <div className="relative">
           <img
             src="/nasgor.jpg"
             alt={item.name}
-            className="w-full h-48 object-cover"
+            className="w-full h-40 object-cover"
           />
           {!item.available && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -45,19 +45,19 @@ const FeaturedMenuCard = ({ item }) => {
           )}
         </div>
         
-        <div className="p-6">
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-[#FFFFFF] mb-2 line-clamp-2" style={{fontFamily: 'Playfair Display, serif'}}>
+        <div className="p-4">
+          <div className="mb-3">
+            <h2 className="text-lg font-bold text-[#FFFFFF] mb-2 line-clamp-2" style={{fontFamily: 'Playfair Display, serif'}}>
               {item.name}
             </h2>
-            <p className="text-[#B3B3B3] text-sm line-clamp-3 leading-relaxed" style={{fontFamily: 'Inter, sans-serif'}}>
+            <p className="text-[#B3B3B3] text-sm line-clamp-2 leading-relaxed" style={{fontFamily: 'Inter, sans-serif'}}>
               {item.description}
             </p>
           </div>
           
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex flex-col">
-              <span className="text-2xl font-bold text-[#FFD700]" style={{fontFamily: 'Playfair Display, serif'}}>
+              <span className="text-xl font-bold text-[#FFD700]" style={{fontFamily: 'Playfair Display, serif'}}>
                 {formatPrice(item.price)}
               </span>
               {item.originalPrice && item.originalPrice > item.price && (
@@ -70,7 +70,7 @@ const FeaturedMenuCard = ({ item }) => {
             <button
               onClick={handleAddToCart}
               disabled={!item.available}
-              className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 relative overflow-hidden ${
+              className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 relative overflow-hidden w-full sm:w-auto ${
                 item.available
                   ? 'bg-[#0D0D0D] border-2 border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700] hover:text-[#0D0D0D] shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0'
                   : 'bg-[#333333] text-[#B3B3B3] cursor-not-allowed'
@@ -79,7 +79,7 @@ const FeaturedMenuCard = ({ item }) => {
               {item.available && (
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
               )}
-              <span className="relative z-10 flex items-center space-x-2">
+              <span className="relative z-10 flex items-center justify-center space-x-2">
                 <Plus className="w-4 h-4" />
                 <span>Tambah</span>
               </span>
@@ -89,7 +89,7 @@ const FeaturedMenuCard = ({ item }) => {
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden md:flex">
+      <div className="hidden lg:flex">
         <div className="relative w-1/2">
           <img
             src="/nasgor.jpg"

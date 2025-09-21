@@ -40,21 +40,34 @@ const Header = () => {
             <div className="min-w-0 flex-1">
               {/* Mobile: Simplified layout */}
               <div className="sm:hidden">
-              <h1 className="text-lg font-bold text-[#FFD700] truncate">
-                {restaurant?.name}
-              </h1>
+                <h1 className="text-lg font-bold text-[#FFD700] truncate">
+                  {restaurant?.name}
+                </h1>
                 <div className="flex items-center space-x-2 mt-0.5">
                   <span className="text-xs text-[#B3B3B3]">Meja {tableNumber}</span>
-                  <span className="text-xs text-[#B3B3B3]">•</span>
-                  <div className="flex items-center space-x-1">
-                    <MapPin className="w-3 h-3 text-[#FFD700]" />
-                    <span className="text-xs text-[#B3B3B3] truncate">{restaurant?.address}</span>
-                  </div>
+                </div>
+                <div className="flex items-center space-x-1 mt-1">
+                  <MapPin className="w-3 h-3 text-[#FFD700] flex-shrink-0" />
+                  <span className="text-xs text-[#B3B3B3] truncate">{restaurant?.address}</span>
+                </div>
+              </div>
+              
+              {/* Tablet: Medium layout */}
+              <div className="hidden sm:block lg:hidden">
+                <h1 className="text-lg font-bold text-[#FFD700] truncate">
+                  {restaurant?.name}
+                </h1>
+                <div className="flex items-center space-x-2 mt-0.5">
+                  <span className="text-xs text-[#B3B3B3]">Meja {tableNumber}</span>
+                </div>
+                <div className="flex items-center space-x-1 mt-1">
+                  <MapPin className="w-3 h-3 text-[#FFD700] flex-shrink-0" />
+                  <span className="text-xs text-[#B3B3B3] truncate">{restaurant?.address}</span>
                 </div>
               </div>
               
               {/* Desktop: Full layout */}
-              <div className="hidden sm:block">
+              <div className="hidden lg:block">
                 <div className="flex items-center space-x-2 mb-1">
                   <span className="text-xs font-medium text-[#B3B3B3] uppercase tracking-wide">
                     {restaurant?.name}
@@ -81,37 +94,29 @@ const Header = () => {
             to={safeBuildUrl("/cart")}
             className="relative group"
           >
-            <div className="flex items-center space-x-2 sm:space-x-3 px-4 sm:px-5 py-3 sm:py-3.5 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 active:translate-y-0 relative overflow-hidden hover:bg-[#FFD700] hover:text-[#0D0D0D]">
-              {/* Shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              
+            <div className="flex items-center space-x-2 sm:space-x-3 px-4 sm:px-5 py-3 sm:py-3.5 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
               {/* Cart Icon */}
               <div className="relative z-10">
-                <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-[#FFD700] group-hover:text-[#0D0D0D]" />
+                <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200" />
               </div>
               
               {/* Text - Hidden on mobile, shown on larger screens */}
               <div className="hidden sm:block relative z-10">
-                <div className="text-sm font-semibold text-[#FFD700] group-hover:text-[#0D0D0D]">Keranjang</div>
-                <div className="text-xs text-[#B3B3B3] group-hover:text-[#0D0D0D]">{getTotalItems()} item</div>
+                <div className="text-sm font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">Keranjang</div>
+                <div className="text-xs text-[#B3B3B3] group-hover:text-[#0D0D0D] transition-colors duration-200">{getTotalItems()} item</div>
               </div>
               
               {/* Mobile: Show item count next to icon */}
               <div className="sm:hidden relative z-10">
-                <span className="text-sm font-bold text-[#FFD700] group-hover:text-[#0D0D0D]">{getTotalItems()}</span>
+                <span className="text-sm font-bold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">{getTotalItems()}</span>
               </div>
             </div>
             
-            {/* Badge for items count */}
+            {/* Badge for items count - removed excessive animations */}
             {getTotalItems() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center font-bold shadow-lg animate-pulse border-2 border-white">
+              <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center font-bold shadow-lg border-2 border-white">
                 {getTotalItems()}
               </span>
-            )}
-            
-            {/* Pulse ring effect */}
-            {getTotalItems() > 0 && (
-              <div className="absolute inset-0 bg-[#FFD700] rounded-xl animate-ping opacity-20"></div>
             )}
           </Link>
         </div>

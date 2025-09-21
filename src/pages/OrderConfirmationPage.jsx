@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useRestaurant } from '../context/RestaurantContext';
 import OrderDetails from '../components/Confirmation/OrderDetails';
-import OrderStatus from '../components/Confirmation/OrderStatus';
 import PaymentInstructions from '../components/Confirmation/PaymentInstructions';
 import { safeBuildUrl } from '../utils/safeNavigation';
 
@@ -106,9 +105,14 @@ const OrderConfirmationPage = () => {
           Terima kasih atas pesanan Anda. Silakan lakukan pembayaran di kasir.
         </p>
         {orderData.orderId && (
-          <p className="text-sm text-[#FFD700] mt-2" style={{fontFamily: 'Inter, sans-serif'}}>
-            Order ID: {orderData.orderId.substring(0, 8).toUpperCase()}
-          </p>
+          <div className="mt-2 space-y-1">
+            <p className="text-sm text-[#FFD700]" style={{fontFamily: 'Inter, sans-serif'}}>
+              Order ID: {orderData.orderId.substring(0, 8).toUpperCase()}
+            </p>
+            <p className="text-sm text-[#B3B3B3]" style={{fontFamily: 'Inter, sans-serif'}}>
+              Meja: {orderData.tableNumber}
+            </p>
+          </div>
         )}
       </div>
 
@@ -121,8 +125,6 @@ const OrderConfirmationPage = () => {
 
         {/* Order Status & Summary */}
         <div className="lg:col-span-1 space-y-6">
-          <OrderStatus orderData={orderData} />
-          
           {/* Order Summary */}
           <div className="bg-[#1A1A1A] rounded-lg shadow-sm border border-[#333333] p-6">
             <h3 className="text-lg font-semibold text-[#FFFFFF] mb-4" style={{fontFamily: 'Playfair Display, serif'}}>

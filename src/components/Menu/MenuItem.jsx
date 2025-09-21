@@ -53,9 +53,9 @@ const MenuItem = ({ item }) => {
 
   return (
     <>
-      <div className="group bg-[#1A1A1A] rounded-2xl shadow-sm border border-[#333333] overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative h-80 flex flex-col">
+      <div className="group bg-[#1A1A1A] rounded-2xl shadow-sm border border-[#333333] overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative h-56 sm:h-64 flex flex-col">
         {/* Image Section */}
-        <div className="relative h-40 flex-shrink-0">
+        <div className="relative h-28 sm:h-32 flex-shrink-0">
           <img
             src="/nasgor.jpg"
             alt={item.name}
@@ -91,30 +91,26 @@ const MenuItem = ({ item }) => {
         </div>
         
         {/* Content Section */}
-        <div className="flex-1 p-4 flex flex-col justify-between">
+        <div className="flex-1 p-2 sm:p-3 flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-bold text-[#FFFFFF] mb-2 line-clamp-2 group-hover:text-[#FFD700] transition-colors" style={{fontFamily: 'Playfair Display, serif'}}>
+            <h3 className="text-sm sm:text-base font-bold text-[#FFFFFF] mb-1 line-clamp-2 group-hover:text-[#FFD700] transition-colors" style={{fontFamily: 'Playfair Display, serif'}}>
               {item.name}
             </h3>
-            <p className="text-[#B3B3B3] text-sm line-clamp-2 leading-relaxed" style={{fontFamily: 'Inter, sans-serif'}}>
-              {item.description}
-            </p>
-          </div>
-          
-          <div className="mt-3">
-            <span className="text-lg font-bold text-[#FFD700]" style={{fontFamily: 'Playfair Display, serif'}}>
-              {formatPrice(displayPrice)}
-            </span>
-            {selectedVariasi && selectedVariasi.harga_tambahan > 0 && (
-              <span className="text-xs text-[#B3B3B3] ml-2">
-                (base: {formatPrice(item.price)})
+            <div className="flex items-center flex-wrap gap-2">
+              <span className="text-sm sm:text-lg font-bold text-[#FFD700]" style={{fontFamily: 'Playfair Display, serif'}}>
+                {formatPrice(displayPrice)}
               </span>
-            )}
-            {item.originalPrice && item.originalPrice > item.price && (
-              <span className="text-sm text-[#B3B3B3] line-through ml-2">
-                {formatPrice(item.originalPrice)}
-              </span>
-            )}
+              {selectedVariasi && selectedVariasi.harga_tambahan > 0 && (
+                <span className="text-xs text-[#B3B3B3]">
+                  (base: {formatPrice(item.price)})
+                </span>
+              )}
+              {item.originalPrice && item.originalPrice > item.price && (
+                <span className="text-sm text-[#B3B3B3] line-through">
+                  {formatPrice(item.originalPrice)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
