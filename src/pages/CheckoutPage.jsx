@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useRestaurant } from '../context/RestaurantContext';
-import { createPesananOnline } from '../services/database';
+import { createPesananOnline, getAdminFee } from '../services/database';
 import OrderSummary from '../components/Checkout/OrderSummary';
 import CustomerInfo from '../components/Checkout/CustomerInfo';
 import PaymentMethod from '../components/Checkout/PaymentMethod';
@@ -27,6 +27,11 @@ const CheckoutPage = () => {
     setIsSubmitting(true);
 
     try {
+      // Get admin fee from database
+      const adminFee = await getAdminFee(restaurant.id);
+      const subtotal = getTotalPrice();
+      const total = subtotal + adminFee;
+
       // Submit pesanan online
       const orderData = {
         tokoId: restaurant.id,
@@ -43,9 +48,9 @@ const CheckoutPage = () => {
           total_price: item.totalPrice,
           notes: ''
         })),
-        total: getTotalPrice(),
-        subtotal: getTotalPrice() - 1000, // Assuming 1000 admin fee
-        adminFee: 1000,
+        total: total,
+        subtotal: subtotal,
+        adminFee: adminFee,
         isAnonymous: false
       };
 
@@ -61,7 +66,7 @@ const CheckoutPage = () => {
           orderType: 'online',
           customerName: customerInfo.name,
           customerPhone: customerInfo.phone,
-          totalAmount: getTotalPrice(),
+          totalAmount: total, // Total yang sudah termasuk admin fee
           items: cartItems, // Kirim items dari cart
           orderNotes: orderNotes
         } 

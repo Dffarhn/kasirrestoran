@@ -93,7 +93,7 @@ const OrderDetails = ({ orderData }) => {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Biaya Aplikasi:</span>
-              <span className="font-medium text-gray-900">{formatPrice(1000)}</span>
+              <span className="font-medium text-gray-900">{formatPrice((orderData?.totalPrice || 0) - subtotal)}</span>
             </div>
             <div className="border-t pt-2">
               <div className="flex justify-between text-base font-semibold">

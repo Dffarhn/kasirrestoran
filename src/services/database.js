@@ -3,6 +3,29 @@ import { supabase } from '../lib/supabase'
 // Database service layer untuk semua operasi database
 
 /**
+ * Get admin fee from database settings
+ */
+export const getAdminFee = async (tokoId) => {
+  try {
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('admin_fee')
+      .eq('toko_id', tokoId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching admin fee:', error)
+      return 1000 // Fallback to default
+    }
+
+    return data?.admin_fee || 1000
+  } catch (error) {
+    console.error('Error in getAdminFee:', error)
+    return 1000 // Fallback to default
+  }
+}
+
+/**
  * Fetch toko (restaurant) data berdasarkan ID
  */
 export const fetchTokoById = async (tokoId) => {
