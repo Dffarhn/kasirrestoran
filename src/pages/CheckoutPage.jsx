@@ -28,7 +28,7 @@ const CheckoutPage = () => {
 
     try {
       // Get admin fee from database
-      const adminFee = await getAdminFee(restaurant.id);
+      const adminFee = await getAdminFee();
       const subtotal = getTotalPrice();
       const total = subtotal + adminFee;
 

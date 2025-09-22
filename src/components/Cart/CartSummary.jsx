@@ -1,10 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { safeBuildUrl } from '../../utils/safeNavigation';
+import { getAdminFee } from '../../services/database';
 
 const CartSummary = () => {
   const { getTotalPrice, getTotalItems } = useCart();
+  const [adminFee, setAdminFee] = useState(1000); // Default fallback
+
+  useEffect(() => {
+    const fetchAdminFee = async () => {
+      try {
+        const fee = await getAdminFee();
+        setAdminFee(fee);
+      } catch (error) {
+        console.error('Error fetching admin fee:', error);
+        setAdminFee(1000); // Fallback to default
+      }
+    };
+
+    fetchAdminFee();
+  }, []);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
@@ -33,13 +49,13 @@ const CartSummary = () => {
         
         <div className="flex justify-between text-sm">
           <span className="text-[#B3B3B3]">Biaya Aplikasi:</span>
-          <span className="font-medium text-[#FFFFFF]">{formatPrice(1000)}</span>
+          <span className="font-medium text-[#FFFFFF]">{formatPrice(adminFee)}</span>
         </div>
         
         <div className="border-t border-[#333333] pt-2">
           <div className="flex justify-between text-base font-semibold">
             <span className="text-[#FFFFFF]">Total Harga:</span>
-            <span className="text-[#FFD700]" style={{fontFamily: 'Playfair Display, serif'}}>{formatPrice(getTotalPrice() + 1000)}</span>
+            <span className="text-[#FFD700]" style={{fontFamily: 'Playfair Display, serif'}}>{formatPrice(getTotalPrice() + adminFee)}</span>
           </div>
         </div>
       </div>

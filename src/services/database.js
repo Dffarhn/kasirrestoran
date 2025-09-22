@@ -5,20 +5,17 @@ import { supabase } from '../lib/supabase'
 /**
  * Get admin fee from database settings
  */
-export const getAdminFee = async (tokoId) => {
+export const getAdminFee = async () => {
   try {
     const { data, error } = await supabase
-      .from('admin_settings')
-      .select('admin_fee')
-      .eq('toko_id', tokoId)
-      .single()
+      .rpc('get_admin_setting', { setting_key_param: 'admin_fee' })
 
     if (error) {
       console.error('Error fetching admin fee:', error)
       return 1000 // Fallback to default
     }
 
-    return data?.admin_fee || 1000
+    return parseInt(data) || 1000
   } catch (error) {
     console.error('Error in getAdminFee:', error)
     return 1000 // Fallback to default
