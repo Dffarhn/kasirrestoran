@@ -14,6 +14,19 @@ const OrderDetails = ({ orderData }) => {
   const customerPhone = orderData?.customerInfo?.phone || orderData?.customerPhone || 'Tidak tersedia';
   const orderItems = orderData?.items || [];
   const orderNotes = orderData?.orderNotes || orderData?.notes;
+  
+  // Calculate subtotal from items
+  const calculateSubtotal = () => {
+    if (orderItems.length > 0) {
+      return orderItems.reduce((total, item) => {
+        return total + ((item.totalPrice || item.price || 0) * (item.quantity || 1));
+      }, 0);
+    }
+    // Fallback: subtract admin fee from total
+    return (orderData?.totalPrice || 0) - 1000;
+  };
+  
+  const subtotal = calculateSubtotal();
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -75,7 +88,7 @@ const OrderDetails = ({ orderData }) => {
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Subtotal:</span>
               <span className="font-medium text-gray-900">
-                {formatPrice((orderData?.totalPrice || 0) - 1000)}
+                {formatPrice(subtotal)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
