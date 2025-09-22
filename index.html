@@ -2,29 +2,77 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Sistem POS Kasir - Aplikasi kasir modern untuk restoran dan toko" />
-    <meta name="keywords" content="pos, kasir, restoran, toko, sistem penjualan" />
-    <meta name="author" content="POS Kasir System" />
-    <meta name="theme-color" content="#3b82f6" />
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="🍽️ Menu Digital & POS Kasir Modern - Solusi lengkap untuk restoran, cafe, dan toko. Pesan online, pembayaran digital, dan manajemen menu terintegrasi. Mulai gratis!" />
+    <meta name="keywords" content="menu digital, pos kasir, restoran online, cafe, toko, pesan online, pembayaran digital, manajemen menu, sistem kasir, restoran digital" />
+    <meta name="author" content="MenuDigital POS" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#FFD700" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="POS Kasir System" />
-    <meta property="og:description" content="Sistem POS Kasir - Aplikasi kasir modern untuk restoran dan toko" />
+    <meta property="og:title" content="🍽️ Menu Digital & POS Kasir Modern" />
+    <meta property="og:description" content="Solusi lengkap untuk restoran, cafe, dan toko. Pesan online, pembayaran digital, dan manajemen menu terintegrasi." />
+    <meta property="og:image" content="/logo.png" />
+    <meta property="og:url" content="https://menudigital-pos.vercel.app" />
+    <meta property="og:site_name" content="MenuDigital POS" />
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:title" content="POS Kasir System" />
-    <meta property="twitter:description" content="Sistem POS Kasir - Aplikasi kasir modern untuk restoran dan toko" />
+    <meta property="twitter:title" content="🍽️ Menu Digital & POS Kasir Modern" />
+    <meta property="twitter:description" content="Solusi lengkap untuk restoran, cafe, dan toko. Pesan online, pembayaran digital, dan manajemen menu terintegrasi." />
+    <meta property="twitter:image" content="/logo.png" />
     
-    <title>POS Kasir System</title>
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="MenuDigital POS" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MenuDigital POS" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <title>🍽️ Menu Digital & POS Kasir Modern | MenuDigital POS</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'GA_MEASUREMENT_ID', {
+        page_title: 'MenuDigital POS',
+        page_location: window.location.href
+      });
+    </script>
+    
+    <!-- Performance Monitoring -->
+    <script>
+      // Basic performance monitoring
+      window.addEventListener('load', function() {
+        const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+        console.log('Page load time:', loadTime + 'ms');
+        
+        // Track Core Web Vitals
+        if ('web-vital' in window) {
+          getCLS(console.log);
+          getFID(console.log);
+          getFCP(console.log);
+          getLCP(console.log);
+          getTTFB(console.log);
+        }
+      });
+    </script>
     
     <link rel="stylesheet" href="/src/index.css">
   </head>

@@ -92,6 +92,71 @@ export const fetchMenuWithVariasi = async (tokoId) => {
 }
 
 /**
+ * Fetch menu langsung dari tabel menu dengan variasi dan image
+ */
+export const fetchMenuWithVariasiAndImages = async (tokoId) => {
+  try {
+    // Fetch menu dengan variasi dan image fields
+    const { data: menuData, error: menuError } = await supabase
+      .from('menu')
+      .select(`
+        *,
+        kategori(nama),
+        menu_variasi(*)
+      `)
+      .eq('toko_id', tokoId)
+      .order('nama', { ascending: true })
+
+    if (menuError) {
+      console.error('Error fetching menu with images:', menuError)
+      throw menuError
+    }
+
+    // Transform data untuk kompatibilitas dengan format yang diharapkan
+    const transformedData = menuData.map(menu => ({
+      ...menu,
+      kategori_nama: menu.kategori?.nama || 'Tanpa Kategori',
+      variasi: menu.menu_variasi || []
+    }))
+
+    // Sort berdasarkan kategori dan nama menu
+    transformedData.sort((a, b) => {
+      // Sort by kategori first
+      if (a.kategori_nama !== b.kategori_nama) {
+        return a.kategori_nama.localeCompare(b.kategori_nama);
+      }
+      // Then sort by nama menu
+      return a.nama.localeCompare(b.nama);
+    });
+
+
+    return transformedData || []
+  } catch (error) {
+    console.error('Error in fetchMenuWithVariasiAndImages:', error)
+    throw error
+  }
+}
+
+/**
+ * Get menu image URL dengan fallback ke default image
+ * Image hanya dari tabel menu (bukan dari variasi)
+ */
+export const getMenuImageUrl = (menuItem) => {
+  // Jika ada image_url (link lengkap), gunakan langsung
+  if (menuItem.image_url && menuItem.image_url.trim() !== '') {
+    return menuItem.image_url;
+  }
+  
+  // Jika ada image_path (path internal), gunakan image_path
+  if (menuItem.image_path && menuItem.image_path.trim() !== '') {
+    return menuItem.image_path;
+  }
+  
+  // Fallback ke default image
+  return '/DefaultMenu.png';
+}
+
+/**
  * Fetch menu berdasarkan kategori
  */
 export const fetchMenuByKategori = async (tokoId, kategoriId) => {

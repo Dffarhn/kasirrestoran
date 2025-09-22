@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { fetchTokoById, fetchKategoriByTokoId, fetchMenuWithVariasi } from '../services/database';
+import { fetchTokoById, fetchKategoriByTokoId, fetchMenuWithVariasiAndImages, getMenuImageUrl } from '../services/database';
 import { getUrlParams, getParamFromStorage, saveParamsToStorage } from '../utils/urlParams';
 
 const RestaurantContext = createContext();
@@ -56,8 +56,9 @@ export const RestaurantProvider = ({ children }) => {
         const [tokoData, kategoriData, menuData] = await Promise.all([
           fetchTokoById(restaurantId),
           fetchKategoriByTokoId(restaurantId),
-          fetchMenuWithVariasi(restaurantId)
+          fetchMenuWithVariasiAndImages(restaurantId)
         ]);
+
 
         // Transform data toko menjadi format restaurant
         const restaurantData = {
@@ -81,13 +82,18 @@ export const RestaurantProvider = ({ children }) => {
             id: menu.id,
             name: menu.nama,
             price: menu.harga,
-            image: "/nasgor.jpg", // Default image untuk MVP
+            image: getMenuImageUrl(menu), // Menggunakan fungsi getMenuImageUrl untuk image
             category: menu.kategori_id,
             category_name: menu.kategori_nama,
             available: true, // Default available
-            variasi: menu.variasi || [] // Array variasi dari database
+            variasi: menu.variasi || [], // Array variasi dari database
+            // Tambahkan field image untuk kompatibilitas
+            image_url: menu.image_url,
+            image_path: menu.image_path
           }))
         };
+
+        console.log('Restaurant Data:', restaurantData);
 
         setRestaurant(restaurantData);
         setTableNumber(table);
@@ -113,19 +119,23 @@ export const RestaurantProvider = ({ children }) => {
               id: 1,
               name: "Nasi Goreng Spesial",
               price: 25000,
-              image: "/nasgor.jpg",
+              image: "/DefaultMenu.png",
               category: 1,
               available: true,
-              variasi: []
+              variasi: [],
+              image_url: null,
+              image_path: null
             },
             {
               id: 2,
               name: "Ayam Bakar Madu",
               price: 35000,
-              image: "/nasgor.jpg",
+              image: "/DefaultMenu.png",
               category: 1,
               available: true,
-              variasi: []
+              variasi: [],
+              image_url: null,
+              image_path: null
             }
           ]
         };

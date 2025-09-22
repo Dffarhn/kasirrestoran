@@ -1,0 +1,50 @@
+{
+  "name": "MenuDigital POS - Menu Digital & POS Kasir Modern",
+  "short_name": "MenuDigital POS",
+  "description": "Solusi lengkap untuk restoran, cafe, dan toko. Pesan online, pembayaran digital, dan manajemen menu terintegrasi.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0D0D",
+  "theme_color": "#FFD700",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "id",
+  "categories": ["business", "food", "productivity"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/logo.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "MenuDigital POS Dashboard"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Menu Digital",
+      "short_name": "Menu",
+      "description": "Lihat menu digital restoran",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

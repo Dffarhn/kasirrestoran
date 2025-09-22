@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
 import { Plus } from 'lucide-react';
 import VariasiSelector from './VariasiSelector';
+import { getMenuImageUrl } from '../../services/database';
 
 const MenuItem = ({ item }) => {
   const { addToCart } = useCart();
@@ -51,15 +52,22 @@ const MenuItem = ({ item }) => {
     ? item.price + selectedVariasi.harga_tambahan 
     : item.price;
 
+  // Get menu image URL
+  const menuImageUrl = getMenuImageUrl(item);
+
   return (
     <>
       <div className="group bg-[#1A1A1A] rounded-2xl shadow-sm border border-[#333333] overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative h-56 sm:h-64 flex flex-col">
         {/* Image Section */}
         <div className="relative h-28 sm:h-32 flex-shrink-0">
           <img
-            src="/nasgor.jpg"
+            src={menuImageUrl}
             alt={item.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              // Fallback ke default image jika image gagal load
+              e.target.src = '/DefaultMenu.png';
+            }}
           />
           {!item.available && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">

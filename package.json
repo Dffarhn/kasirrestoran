@@ -1,13 +1,28 @@
 {
-  "name": "user_frontend",
+  "name": "menudigital-pos",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "🍽️ Menu Digital & POS Kasir Modern - Solusi lengkap untuk restoran, cafe, dan toko",
+  "keywords": ["pos", "kasir", "restoran", "menu digital", "pwa", "react", "supabase"],
+  "author": "MenuDigital POS Team",
+  "license": "MIT",
+  "homepage": "https://menudigital-pos.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/menudigital-pos.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/menudigital-pos/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

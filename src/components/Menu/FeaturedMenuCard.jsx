@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCart } from '../../context/CartContext';
 import { Plus } from 'lucide-react';
+import { getMenuImageUrl } from '../../services/database';
 
 const FeaturedMenuCard = ({ item }) => {
   const { addToCart } = useCart();
@@ -12,6 +13,9 @@ const FeaturedMenuCard = ({ item }) => {
       minimumFractionDigits: 0,
     }).format(price);
   };
+
+  // Get menu image URL
+  const menuImageUrl = getMenuImageUrl(item);
 
   const handleAddToCart = () => {
     if (item.available) {
@@ -32,9 +36,13 @@ const FeaturedMenuCard = ({ item }) => {
       <div className="block lg:hidden">
         <div className="relative">
           <img
-            src="/nasgor.jpg"
+            src={menuImageUrl}
             alt={item.name}
             className="w-full h-40 object-cover"
+            onError={(e) => {
+              // Fallback ke default image jika image gagal load
+              e.target.src = '/DefaultMenu.png';
+            }}
           />
           {!item.available && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -92,9 +100,13 @@ const FeaturedMenuCard = ({ item }) => {
       <div className="hidden lg:flex">
         <div className="relative w-1/2">
           <img
-            src="/nasgor.jpg"
+            src={menuImageUrl}
             alt={item.name}
             className="w-full h-64 object-cover"
+            onError={(e) => {
+              // Fallback ke default image jika image gagal load
+              e.target.src = '/DefaultMenu.png';
+            }}
           />
           {!item.available && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
