@@ -45,12 +45,20 @@ export const CartProvider = ({ children }) => {
         const variasiPrice = selectedVariasi ? selectedVariasi.harga_tambahan : 0;
         const totalPrice = item.price + variasiPrice;
         
+        // Calculate discount
+        const discountPercentage = item.discount_percentage || 0;
+        const discountAmount = Math.round((totalPrice * discountPercentage) / 100);
+        const finalPrice = totalPrice - discountAmount;
+
         const newCartItem = {
           cartItemId, // Unique ID untuk cart item
           id: item.id, // Menu ID
           name: item.name,
           price: item.price, // Base price
-          totalPrice, // Price including variasi
+          totalPrice: finalPrice, // Price including variasi and discount
+          originalPrice: totalPrice, // Price before discount
+          discountPercentage,
+          discountAmount,
           quantity: 1,
           variasi_id: selectedVariasi ? selectedVariasi.id : null,
           variasi_name: selectedVariasi ? selectedVariasi.nama : null,
@@ -58,6 +66,13 @@ export const CartProvider = ({ children }) => {
           image: item.image,
           category: item.category
         };
+
+        // Debug logging untuk image
+        console.log('Adding to cart:', {
+          itemName: item.name,
+          itemImage: item.image,
+          cartItemImage: newCartItem.image
+        });
         
         return [...prevItems, newCartItem];
       }

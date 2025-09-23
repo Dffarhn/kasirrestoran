@@ -157,6 +157,21 @@ export const getMenuImageUrl = (menuItem) => {
 }
 
 /**
+ * Calculate discount amount and final price
+ */
+export const calculateDiscount = (basePrice, discountPercentage) => {
+  const discountAmount = Math.round((basePrice * discountPercentage) / 100);
+  const finalPrice = basePrice - discountAmount;
+  
+  return {
+    originalPrice: basePrice,
+    discountPercentage: discountPercentage || 0,
+    discountAmount,
+    finalPrice
+  };
+}
+
+/**
  * Fetch menu berdasarkan kategori
  */
 export const fetchMenuByKategori = async (tokoId, kategoriId) => {
@@ -322,7 +337,11 @@ export const submitOrder = async (orderData) => {
         variasi_id: item.variasi_id,
         qty: item.quantity,
         harga_satuan: item.harga_satuan,
-        nama_menu: item.nama_menu
+        nama_menu: item.nama_menu,
+        variasi_nama: item.variasi_nama,
+        discount_percentage: item.discount_percentage || 0,
+        harga_asli: item.harga_asli || item.harga_satuan,
+        total_discount: item.total_discount || 0
       })
     )
 
@@ -426,7 +445,10 @@ export const createPesananOnline = async (orderData) => {
       quantity: item.quantity,
       unit_price: item.unit_price,
       total_price: item.total_price,
-      notes: item.notes || ''
+      notes: item.notes || '',
+      discount_percentage: item.discount_percentage || 0,
+      harga_asli: item.harga_asli || item.unit_price,
+      total_discount: item.total_discount || 0
     }));
 
     const { error: detailError } = await supabase
@@ -546,7 +568,10 @@ export const convertPesananOnlineToTransaksi = async (pesananOnlineId, userId) =
           qty: detail.quantity,
           harga_satuan: detail.unit_price,
           nama_menu: detail.menu_name,
-          variasi_nama: detail.variasi_name
+          variasi_nama: detail.variasi_name,
+          discount_percentage: detail.discount_percentage || 0,
+          harga_asli: detail.harga_asli || detail.unit_price,
+          total_discount: detail.total_discount || 0
         })
     );
 

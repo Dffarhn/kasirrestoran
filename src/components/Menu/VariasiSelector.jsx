@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const VariasiSelector = ({ variasi, onVariasiSelect, selectedVariasiId, menuPrice }) => {
+const VariasiSelector = ({ variasi, onVariasiSelect, selectedVariasiId, menuPrice, discountPercentage = 0 }) => {
   const [selectedId, setSelectedId] = useState(selectedVariasiId);
 
   useEffect(() => {
@@ -19,9 +19,13 @@ const VariasiSelector = ({ variasi, onVariasiSelect, selectedVariasiId, menuPric
 
   // Cari variasi yang dipilih untuk mendapatkan harga
   const selectedVariasi = variasi.find(v => v.id === selectedId);
-  const totalPrice = selectedVariasi 
+  const basePrice = selectedVariasi 
     ? menuPrice + selectedVariasi.harga_tambahan 
     : menuPrice;
+  
+  // Calculate price with discount
+  const discountAmount = Math.round((basePrice * discountPercentage) / 100);
+  const totalPrice = basePrice - discountAmount;
 
   return (
     <div className="mt-2">
@@ -67,6 +71,15 @@ const VariasiSelector = ({ variasi, onVariasiSelect, selectedVariasiId, menuPric
                   currency: 'IDR',
                   minimumFractionDigits: 0,
                 }).format(totalPrice)}
+                {discountPercentage > 0 && (
+                  <div className="text-xs text-[#B3B3B3] line-through">
+                    {new Intl.NumberFormat('id-ID', {
+                      style: 'currency',
+                      currency: 'IDR',
+                      minimumFractionDigits: 0,
+                    }).format(basePrice)}
+                  </div>
+                )}
               </div>
             )}
           </label>

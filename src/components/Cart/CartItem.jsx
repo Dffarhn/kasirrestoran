@@ -4,6 +4,13 @@ import { useCart } from '../../context/CartContext';
 const CartItem = ({ item }) => {
   const { updateQuantity, removeFromCart } = useCart();
 
+  // Debug logging untuk image
+  console.log('CartItem Debug:', {
+    itemName: item.name,
+    itemImage: item.image,
+    item: item
+  });
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -25,9 +32,12 @@ const CartItem = ({ item }) => {
       <div className="flex items-start space-x-4">
         {/* Image */}
         <img
-          src="/nasgor.jpg"
+          src={item.image || "/DefaultMenu.png"}
           alt={item.name}
           className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+          onError={(e) => {
+            e.target.src = "/DefaultMenu.png";
+          }}
         />
         
         {/* Item Info */}
@@ -40,9 +50,21 @@ const CartItem = ({ item }) => {
             Variasi: {item.variasi_name}
           </p>
         )}
-        <p className="text-sm text-[#FFD700] font-semibold mb-3">
-          {formatPrice(item.totalPrice)} per item
-        </p>
+        <div className="mb-3">
+          <p className="text-sm text-[#FFD700] font-semibold">
+            {formatPrice(item.totalPrice)} per item
+          </p>
+          {item.discountPercentage > 0 && (
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-[#B3B3B3] line-through">
+                {formatPrice(item.originalPrice)}
+              </span>
+              <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">
+                -{item.discountPercentage}%
+              </span>
+            </div>
+          )}
+        </div>
           
           {/* Quantity Controls */}
           <div className="flex items-center space-x-3">

@@ -5,7 +5,7 @@ import { safeBuildUrl } from '../../utils/safeNavigation';
 import { getAdminFee } from '../../services/database';
 
 const CartSummary = () => {
-  const { getTotalPrice, getTotalItems } = useCart();
+  const { cartItems, getTotalPrice, getTotalItems } = useCart();
   const [adminFee, setAdminFee] = useState(1000); // Default fallback
 
   useEffect(() => {
@@ -30,6 +30,14 @@ const CartSummary = () => {
     }).format(price);
   };
 
+  const getTotalDiscount = () => {
+    return cartItems.reduce((total, item) => total + (item.discountAmount * item.quantity), 0);
+  };
+
+  const getSubtotalBeforeDiscount = () => {
+    return cartItems.reduce((total, item) => total + (item.originalPrice * item.quantity), 0);
+  };
+
   return (
     <div className="bg-[#1A1A1A] rounded-lg shadow-sm border border-[#333333] p-4">
       <h2 className="text-base font-semibold text-[#FFFFFF] mb-3" style={{fontFamily: 'Playfair Display, serif'}}>
@@ -44,6 +52,18 @@ const CartSummary = () => {
         
         <div className="flex justify-between text-sm">
           <span className="text-[#B3B3B3]">Subtotal:</span>
+          <span className="font-medium text-[#FFFFFF]">{formatPrice(getSubtotalBeforeDiscount())}</span>
+        </div>
+        
+        {getTotalDiscount() > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-[#B3B3B3]">Diskon:</span>
+            <span className="font-medium text-red-400">-{formatPrice(getTotalDiscount())}</span>
+          </div>
+        )}
+        
+        <div className="flex justify-between text-sm">
+          <span className="text-[#B3B3B3]">Subtotal Setelah Diskon:</span>
           <span className="font-medium text-[#FFFFFF]">{formatPrice(getTotalPrice())}</span>
         </div>
         

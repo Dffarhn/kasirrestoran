@@ -89,11 +89,18 @@ export const RestaurantProvider = ({ children }) => {
             variasi: menu.variasi || [], // Array variasi dari database
             // Tambahkan field image untuk kompatibilitas
             image_url: menu.image_url,
-            image_path: menu.image_path
+            image_path: menu.image_path,
+            // Tambahkan field discount
+            discount_percentage: menu.discount_percentage || 0
           }))
         };
 
         console.log('Restaurant Data:', restaurantData);
+        console.log('Menu Data with Discount:', menuData.map(menu => ({
+          name: menu.nama,
+          price: menu.harga,
+          discount_percentage: menu.discount_percentage
+        })));
 
         setRestaurant(restaurantData);
         setTableNumber(table);
@@ -124,7 +131,8 @@ export const RestaurantProvider = ({ children }) => {
               available: true,
               variasi: [],
               image_url: null,
-              image_path: null
+              image_path: null,
+              discount_percentage: 20 // Test discount 20%
             },
             {
               id: 2,
@@ -135,7 +143,20 @@ export const RestaurantProvider = ({ children }) => {
               available: true,
               variasi: [],
               image_url: null,
-              image_path: null
+              image_path: null,
+              discount_percentage: 15 // Test discount 15%
+            },
+            {
+              id: 3,
+              name: "Es Teh Manis",
+              price: 8000,
+              image: "/DefaultMenu.png",
+              category: 2,
+              available: true,
+              variasi: [],
+              image_url: null,
+              image_path: null,
+              discount_percentage: 0 // No discount
             }
           ]
         };

@@ -47,17 +47,32 @@ const MenuItem = ({ item }) => {
     }).format(price);
   };
 
-  // Calculate display price
-  const displayPrice = selectedVariasi 
+  // Calculate display price with discount
+  const basePrice = selectedVariasi 
     ? item.price + selectedVariasi.harga_tambahan 
     : item.price;
+  
+  const discountPercentage = item.discount_percentage || 0;
+  const discountAmount = Math.round((basePrice * discountPercentage) / 100);
+  const displayPrice = basePrice - discountAmount;
+
+  // Debug logging
+  console.log('MenuItem Debug:', {
+    itemName: item.name,
+    basePrice,
+    discountPercentage,
+    discountAmount,
+    displayPrice,
+    item: item
+  });
 
   // Get menu image URL
   const menuImageUrl = getMenuImageUrl(item);
 
   return (
     <>
-      <div className="group bg-[#1A1A1A] rounded-2xl shadow-sm border border-[#333333] overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative h-56 sm:h-64 flex flex-col">
+      {/* Mobile/Tablet Layout */}
+      <div className="lg:hidden group bg-[#1A1A1A] rounded-2xl shadow-sm border border-[#333333] overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative h-56 sm:h-64 flex flex-col">
         {/* Image Section */}
         <div className="relative h-28 sm:h-32 flex-shrink-0">
           <img
@@ -84,6 +99,15 @@ const MenuItem = ({ item }) => {
             </span>
           </div>
 
+          {/* Discount badge */}
+          {discountPercentage > 0 && (
+            <div className="absolute top-2 right-2">
+              <span className="bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg">
+                -{discountPercentage}%
+              </span>
+            </div>
+          )}
+
           {/* Floating Add Button */}
           <button
             onClick={handleAddToCart}
@@ -108,17 +132,100 @@ const MenuItem = ({ item }) => {
               <span className="text-sm sm:text-lg font-bold text-[#FFD700]" style={{fontFamily: 'Playfair Display, serif'}}>
                 {formatPrice(displayPrice)}
               </span>
+              {discountPercentage > 0 && (
+                <span className="text-sm text-[#B3B3B3] line-through">
+                  {formatPrice(basePrice)}
+                </span>
+              )}
               {selectedVariasi && selectedVariasi.harga_tambahan > 0 && (
                 <span className="text-xs text-[#B3B3B3]">
                   (base: {formatPrice(item.price)})
                 </span>
               )}
-              {item.originalPrice && item.originalPrice > item.price && (
-                <span className="text-sm text-[#B3B3B3] line-through">
-                  {formatPrice(item.originalPrice)}
-                </span>
-              )}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden lg:block group bg-[#1A1A1A] rounded-3xl shadow-lg border border-[#333333] overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative">
+        <div className="flex">
+          {/* Image Section - Desktop */}
+          <div className="relative w-1/3 h-48 flex-shrink-0">
+            <img
+              src={menuImageUrl}
+              alt={item.name}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              onError={(e) => {
+                e.target.src = '/DefaultMenu.png';
+              }}
+            />
+            {!item.available && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <span className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                  Habis
+                </span>
+              </div>
+            )}
+            
+            {/* Category badge - Desktop */}
+            <div className="absolute top-3 left-3">
+              <span className="bg-[#FFD700]/20 text-[#FFD700] px-3 py-1.5 rounded-full text-sm font-medium border border-[#FFD700]/30 backdrop-blur-sm">
+                {item.category_name || item.category}
+              </span>
+            </div>
+
+            {/* Discount badge - Desktop */}
+            {discountPercentage > 0 && (
+              <div className="absolute top-3 right-3">
+                <span className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg">
+                  -{discountPercentage}%
+                </span>
+              </div>
+            )}
+          </div>
+          
+          {/* Content Section - Desktop */}
+          <div className="flex-1 p-6 flex flex-col justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-[#FFFFFF] mb-3 group-hover:text-[#FFD700] transition-colors line-clamp-2" style={{fontFamily: 'Playfair Display, serif'}}>
+                {item.name}
+              </h3>
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-2xl font-bold text-[#FFD700]" style={{fontFamily: 'Playfair Display, serif'}}>
+                  {formatPrice(displayPrice)}
+                </span>
+                {discountPercentage > 0 && (
+                  <span className="text-lg text-[#B3B3B3] line-through">
+                    {formatPrice(basePrice)}
+                  </span>
+                )}
+                {selectedVariasi && selectedVariasi.harga_tambahan > 0 && (
+                  <span className="text-sm text-[#B3B3B3]">
+                    (base: {formatPrice(item.price)})
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {/* Add Button - Desktop */}
+            <button
+              onClick={handleAddToCart}
+              disabled={!item.available}
+              className={`w-full py-4 px-6 rounded-2xl text-lg font-semibold transition-all duration-300 relative overflow-hidden ${
+                item.available
+                  ? 'bg-[#FFD700] text-[#0D0D0D] hover:bg-[#E6B800] hover:shadow-xl hover:-translate-y-1 active:translate-y-0'
+                  : 'bg-[#333333] text-[#B3B3B3] cursor-not-allowed'
+              }`}
+            >
+              {item.available && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+              )}
+              <span className="relative z-10 flex items-center justify-center space-x-2">
+                <Plus className="w-6 h-6" />
+                <span>Tambah ke Keranjang</span>
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -136,6 +243,7 @@ const MenuItem = ({ item }) => {
               onVariasiSelect={handleVariasiSelect}
               selectedVariasiId={selectedVariasi?.id}
               menuPrice={item.price}
+              discountPercentage={discountPercentage}
             />
             
             <div className="flex space-x-3 mt-6">
