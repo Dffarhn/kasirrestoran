@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRestaurant } from './RestaurantContext';
 
 const CartContext = createContext();
 
@@ -13,6 +14,7 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const { restaurant } = useRestaurant();
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -109,6 +111,36 @@ export const CartProvider = ({ children }) => {
     return cartItems.reduce((total, item) => total + (item.totalPrice * item.quantity), 0);
   };
 
+  // Calculate global discount
+  const getGlobalDiscountAmount = () => {
+    if (!restaurant?.globalDiscount?.enabled || restaurant?.globalDiscount?.percentage <= 0) {
+      return 0;
+    }
+    
+    const subtotal = getTotalPrice();
+    return Math.round((subtotal * restaurant.globalDiscount.percentage) / 100);
+  };
+
+  // Get total price with global discount
+  const getTotalPriceWithGlobalDiscount = () => {
+    const subtotal = getTotalPrice();
+    const globalDiscountAmount = getGlobalDiscountAmount();
+    return subtotal - globalDiscountAmount;
+  };
+
+  // Get global discount info
+  const getGlobalDiscountInfo = () => {
+    if (!restaurant?.globalDiscount?.enabled || restaurant?.globalDiscount?.percentage <= 0) {
+      return null;
+    }
+    
+    return {
+      enabled: restaurant.globalDiscount.enabled,
+      percentage: restaurant.globalDiscount.percentage,
+      amount: getGlobalDiscountAmount()
+    };
+  };
+
   const value = {
     cartItems,
     addToCart,
@@ -117,6 +149,9 @@ export const CartProvider = ({ children }) => {
     clearCart,
     getTotalItems,
     getTotalPrice,
+    getGlobalDiscountAmount,
+    getTotalPriceWithGlobalDiscount,
+    getGlobalDiscountInfo,
     isCartOpen,
     setIsCartOpen
   };

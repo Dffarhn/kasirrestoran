@@ -1,6 +1,9 @@
 import React from 'react';
+import { useCart } from '../../context/CartContext';
 
 const OrderDetails = ({ orderData }) => {
+  const { getGlobalDiscountInfo, getGlobalDiscountAmount, getTotalPriceWithGlobalDiscount } = useCart();
+  
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -15,19 +18,21 @@ const OrderDetails = ({ orderData }) => {
   const orderItems = orderData?.items || [];
   const orderNotes = orderData?.orderNotes || orderData?.notes;
   
-  // Calculate subtotal from items (after discount)
+  // Calculate subtotal from items (BEFORE global discount)
   const calculateSubtotal = () => {
     if (orderItems.length > 0) {
       return orderItems.reduce((total, item) => {
-        return total + ((item.totalPrice || item.price || 0) * (item.quantity || 1));
+        // Gunakan originalPrice jika ada, jika tidak gunakan price
+        const itemPrice = item.originalPrice || item.price || 0;
+        return total + (itemPrice * (item.quantity || 1));
       }, 0);
     }
-    // Fallback: subtract admin fee from total
-    return (orderData?.totalPrice || 0) - 1000;
+    // Fallback: gunakan subtotal dari orderData jika ada
+    return orderData?.subtotal || 0;
   };
 
-  // Calculate total discount
-  const calculateTotalDiscount = () => {
+  // Calculate item-level discount (per item discount)
+  const calculateItemDiscount = () => {
     if (orderItems.length > 0) {
       return orderItems.reduce((total, item) => {
         const originalPrice = (item.originalPrice || item.price || 0) * (item.quantity || 1);
@@ -38,17 +43,20 @@ const OrderDetails = ({ orderData }) => {
     return 0;
   };
 
-  // Calculate subtotal before discount
+  // Calculate subtotal before any discount (original prices)
   const calculateSubtotalBeforeDiscount = () => {
     if (orderItems.length > 0) {
       return orderItems.reduce((total, item) => {
         return total + ((item.originalPrice || item.price || 0) * (item.quantity || 1));
       }, 0);
     }
-    return subtotal;
+    return calculateSubtotal();
   };
   
-  const subtotal = calculateSubtotal();
+  const subtotal = orderData?.subtotalBeforeDiscount ?? calculateSubtotal();
+  const globalDiscountInfo = getGlobalDiscountInfo();
+  const globalDiscountAmount = orderData?.globalDiscountAmount ?? getGlobalDiscountAmount();
+  const adminFee = orderData?.adminFee ?? 1000;
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -116,35 +124,52 @@ const OrderDetails = ({ orderData }) => {
           </div>
         )}
 
-        {/* Price Breakdown */}
+        {/* Price Breakdown - Ringkas */}
         <div className="border-t pt-4">
-          <h3 className="font-medium text-gray-900 mb-3">Rincian Harga</h3>
+          <h3 className="font-medium text-gray-900 mb-3">Ringkasan Pesanan</h3>
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Subtotal:</span>
-              <span className="font-medium text-gray-900">
-                {formatPrice(calculateSubtotalBeforeDiscount())}
-              </span>
-            </div>
-            {calculateTotalDiscount() > 0 && (
+            {/* Items (harga sebelum diskon) */}
+            {orderItems.map((item, idx) => {
+              const qty = item.quantity || 1;
+              const original = (item.originalPrice || item.price || 0) * qty;
+              return (
+                <div key={item.id || idx} className="flex justify-between text-sm">
+                  <span className="text-gray-900 truncate pr-2">
+                    {item.name} x{qty}
+                  </span>
+                  <span className="text-gray-900">
+                    {formatPrice(original)} <span className="text-gray-500 text-xs">(sebelum diskon)</span>
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Diskon Item (akumulasi) */}
+            {calculateItemDiscount() > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Diskon:</span>
-                <span className="font-medium text-red-500">-{formatPrice(calculateTotalDiscount())}</span>
+                <span className="text-gray-600">Diskon Item</span>
+                <span className="font-medium text-red-500">-{formatPrice(calculateItemDiscount())}</span>
               </div>
             )}
+
+            {/* Diskon Global */}
+            {(globalDiscountInfo && globalDiscountInfo.percentage > 0) && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Diskon Global ({globalDiscountInfo.percentage}%)</span>
+                <span className="font-medium text-[#FFD700]">-{formatPrice(globalDiscountAmount || 0)}</span>
+              </div>
+            )}
+
+            {/* Biaya Aplikasi */}
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Subtotal Setelah Diskon:</span>
-              <span className="font-medium text-gray-900">
-                {formatPrice(subtotal)}
-              </span>
+              <span className="text-gray-600">Biaya Aplikasi</span>
+              <span className="font-medium text-gray-900">{formatPrice(adminFee)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Biaya Aplikasi:</span>
-              <span className="font-medium text-gray-900">{formatPrice((orderData?.totalPrice || 0) - subtotal)}</span>
-            </div>
+
+            {/* Separator dan Total Bayar */}
             <div className="border-t pt-2">
               <div className="flex justify-between text-base font-semibold">
-                <span className="text-gray-900">Total Harga:</span>
+                <span className="text-gray-900">Total Bayar</span>
                 <span className="text-[#FFD700]" style={{fontFamily: 'Playfair Display, serif'}}>
                   {formatPrice(orderData?.totalPrice || 0)}
                 </span>

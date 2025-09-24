@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { useRestaurant } from '../context/RestaurantContext';
 import CategoryFilter from '../components/Menu/CategoryFilter';
+import MenuSearch from '../components/Menu/MenuSearch';
 import FeaturedMenuCard from '../components/Menu/FeaturedMenuCard';
 import MenuItem from '../components/Menu/MenuItem';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
+import GlobalDiscountBanner from '../components/UI/GlobalDiscountBanner';
 import { useKeyboardShortcuts, useDesktopFeatures } from '../hooks/useKeyboardShortcuts';
 
 const MenuPage = () => {
   const { restaurant, loading } = useRestaurant();
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchResults, setSearchResults] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
   
   // Desktop features
   useKeyboardShortcuts();
@@ -33,9 +37,31 @@ const MenuPage = () => {
     );
   }
 
-  const filteredMenu = selectedCategory
-    ? restaurant.menu.filter(item => item.category === selectedCategory)
-    : restaurant.menu;
+  // Handle search and category filtering
+  const handleSearchResults = (results) => {
+    setSearchResults(results);
+    setIsSearching(false);
+  };
+
+  const handleClearSearch = () => {
+    setSearchResults(null);
+    setIsSearching(false);
+  };
+
+  // Determine which menu to display
+  const getDisplayMenu = () => {
+    if (searchResults) {
+      return searchResults;
+    }
+    
+    if (selectedCategory) {
+      return restaurant.menu.filter(item => item.category === selectedCategory);
+    }
+    
+    return restaurant.menu;
+  };
+
+  const filteredMenu = getDisplayMenu();
 
   // Get featured item (first item or a special one)
   const featuredItem = filteredMenu.length > 0 ? filteredMenu[0] : null;
@@ -62,6 +88,17 @@ const MenuPage = () => {
                 <div className="text-2xl font-bold text-[#FFD700]">{filteredMenu.length}</div>
               </div>
             </div>
+            
+            {/* Global Discount Banner */}
+            <GlobalDiscountBanner globalDiscount={restaurant.globalDiscount} />
+            
+            {/* Desktop Search */}
+            <MenuSearch
+              menu={restaurant.menu}
+              selectedCategory={selectedCategory}
+              onSearchResults={handleSearchResults}
+              onClearSearch={handleClearSearch}
+            />
             
             {/* Desktop Category Filter */}
             <CategoryFilter
@@ -111,6 +148,17 @@ const MenuPage = () => {
 
       {/* Mobile/Tablet Layout */}
       <div className="lg:hidden px-4 py-4 pb-24">
+        {/* Global Discount Banner - Mobile */}
+        <GlobalDiscountBanner globalDiscount={restaurant.globalDiscount} />
+        
+        {/* Search - Mobile Optimized */}
+        <MenuSearch
+          menu={restaurant.menu}
+          selectedCategory={selectedCategory}
+          onSearchResults={handleSearchResults}
+          onClearSearch={handleClearSearch}
+        />
+        
         {/* Category Filter - Mobile Optimized */}
         <CategoryFilter
           categories={restaurant.categories}

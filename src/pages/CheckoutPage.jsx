@@ -11,7 +11,14 @@ import { safeNavigate } from '../utils/safeNavigation';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
-  const { cartItems, getTotalPrice, clearCart } = useCart();
+  const { 
+    cartItems, 
+    getTotalPrice, 
+    getGlobalDiscountAmount, 
+    getTotalPriceWithGlobalDiscount, 
+    getGlobalDiscountInfo, 
+    clearCart 
+  } = useCart();
   const { restaurant, tableNumber } = useRestaurant();
   
   const [customerInfo, setCustomerInfo] = useState({
@@ -29,8 +36,10 @@ const CheckoutPage = () => {
     try {
       // Get admin fee from database
       const adminFee = await getAdminFee();
-      const subtotal = getTotalPrice();
-      const total = subtotal + adminFee;
+      const subtotal = getTotalPrice(); // Subtotal SEBELUM global discount
+      const globalDiscountAmount = getGlobalDiscountAmount();
+      const finalSubtotal = getTotalPriceWithGlobalDiscount(); // Subtotal SETELAH global discount
+      const total = finalSubtotal + adminFee;
 
       // Submit pesanan online
       const orderData = {
@@ -49,8 +58,11 @@ const CheckoutPage = () => {
           notes: ''
         })),
         total: total,
-        subtotal: subtotal,
+        subtotal: subtotal, // Subtotal SEBELUM global discount
+        finalSubtotal: finalSubtotal, // Subtotal SETELAH global discount
         adminFee: adminFee,
+        globalDiscountAmount: globalDiscountAmount,
+        globalDiscountPercentage: getGlobalDiscountInfo()?.percentage || 0,
         isAnonymous: false
       };
 
@@ -68,7 +80,13 @@ const CheckoutPage = () => {
           customerPhone: customerInfo.phone,
           totalAmount: total, // Total yang sudah termasuk admin fee
           items: cartItems, // Kirim items dari cart
-          orderNotes: orderNotes
+          orderNotes: orderNotes,
+          // Tambahan untuk konfirmasi agar konsisten dengan ringkasan
+          adminFee: adminFee,
+          subtotalBeforeDiscount: subtotal,
+          finalSubtotalAfterGlobal: finalSubtotal,
+          globalDiscountAmount: globalDiscountAmount,
+          globalDiscountPercentage: getGlobalDiscountInfo()?.percentage || 0
         } 
       });
     } catch (error) {

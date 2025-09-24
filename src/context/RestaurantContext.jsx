@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { fetchTokoById, fetchKategoriByTokoId, fetchMenuWithVariasiAndImages, getMenuImageUrl } from '../services/database';
+import { fetchTokoById, fetchKategoriByTokoId, fetchMenuWithVariasiAndImages, getMenuImageUrl, getGlobalDiscount } from '../services/database';
 import { getUrlParams, getParamFromStorage, saveParamsToStorage } from '../utils/urlParams';
 
 const RestaurantContext = createContext();
@@ -52,11 +52,12 @@ export const RestaurantProvider = ({ children }) => {
         // Simpan parameter ke localStorage untuk backup
         saveParamsToStorage({ toko_id: restaurantId, table });
 
-        // Fetch data toko, kategori, dan menu secara parallel
-        const [tokoData, kategoriData, menuData] = await Promise.all([
+        // Fetch data toko, kategori, menu, dan global discount secara parallel
+        const [tokoData, kategoriData, menuData, globalDiscountData] = await Promise.all([
           fetchTokoById(restaurantId),
           fetchKategoriByTokoId(restaurantId),
-          fetchMenuWithVariasiAndImages(restaurantId)
+          fetchMenuWithVariasiAndImages(restaurantId),
+          getGlobalDiscount(restaurantId)
         ]);
 
 
@@ -71,6 +72,8 @@ export const RestaurantProvider = ({ children }) => {
           social_media: tokoData.social_media,
           license_status: tokoData.license_status,
           license_type: tokoData.license_type,
+          // Global discount settings
+          globalDiscount: globalDiscountData,
           // Transform kategori data
           categories: kategoriData.map(kategori => ({
             id: kategori.id,

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useRestaurant } from '../context/RestaurantContext';
+import { useCart } from '../context/CartContext';
 import OrderDetails from '../components/Confirmation/OrderDetails';
 import PaymentInstructions from '../components/Confirmation/PaymentInstructions';
 import { safeBuildUrl } from '../utils/safeNavigation';
 
 const OrderConfirmationPage = () => {
   const { restaurant, tableNumber } = useRestaurant();
+  const { getGlobalDiscountInfo, getGlobalDiscountAmount, getTotalPriceWithGlobalDiscount } = useCart();
   const location = useLocation();
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,13 @@ const OrderConfirmationPage = () => {
         orderTime: new Date().toISOString(),
         items: location.state.items || [], // Items dari navigation state
         orderNotes: location.state.orderNotes || '',
-        restaurantId: restaurant?.id
+        restaurantId: restaurant?.id,
+        // nilai tambahan dari checkout, untuk konsistensi
+        adminFee: location.state.adminFee,
+        subtotalBeforeDiscount: location.state.subtotalBeforeDiscount,
+        finalSubtotalAfterGlobal: location.state.finalSubtotalAfterGlobal,
+        globalDiscountAmount: location.state.globalDiscountAmount,
+        globalDiscountPercentage: location.state.globalDiscountPercentage
       });
     } else {
       // Fallback ke localStorage (legacy)

@@ -193,6 +193,11 @@ export const RealtimeOrdersList = ({
                   <p className="text-sm font-semibold text-gray-900">
                     {formatCurrency(order.total_amount)}
                   </p>
+                  {order.global_discount_amount > 0 && (
+                    <p className="text-xs text-[#FFD700]">
+                      Diskon: -{formatCurrency(order.global_discount_amount)}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500">
                     {formatDate(order.created_at)}
                   </p>

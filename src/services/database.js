@@ -23,6 +23,32 @@ export const getAdminFee = async () => {
 }
 
 /**
+ * Get global discount settings from toko
+ */
+export const getGlobalDiscount = async (tokoId) => {
+  try {
+    const { data, error } = await supabase
+      .from('toko')
+      .select('global_discount_percentage, global_discount_enabled')
+      .eq('id', tokoId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching global discount:', error)
+      return { enabled: false, percentage: 0 }
+    }
+
+    return {
+      enabled: data.global_discount_enabled || false,
+      percentage: data.global_discount_percentage || 0
+    }
+  } catch (error) {
+    console.error('Error in getGlobalDiscount:', error)
+    return { enabled: false, percentage: 0 }
+  }
+}
+
+/**
  * Fetch toko (restaurant) data berdasarkan ID
  */
 export const fetchTokoById = async (tokoId) => {
@@ -423,12 +449,15 @@ export const createPesananOnline = async (orderData) => {
         table_number: orderData.tableNumber,
         order_notes: orderData.orderNotes,
         total_amount: orderData.total,
-        subtotal: orderData.subtotal,
+        subtotal: orderData.subtotal, // Subtotal SEBELUM global discount
         admin_fee: orderData.adminFee,
         is_anonymous: false,
         customer_type: 'online',
         status: 'pending',
-        pelanggan_id: customerId
+        pelanggan_id: customerId,
+        // Global discount fields
+        global_discount_amount: orderData.globalDiscountAmount || 0,
+        global_discount_percentage: orderData.globalDiscountPercentage || 0
       })
       .select()
       .single();
@@ -550,7 +579,10 @@ export const convertPesananOnlineToTransaksi = async (pesananOnlineId, userId) =
         pesan: pesanan.order_notes,
         is_anonymous: pesanan.is_anonymous,
         customer_type: pesanan.customer_type,
-        order_type: 'online' // Tambahan field untuk membedakan order type
+        order_type: 'online', // Tambahan field untuk membedakan order type
+        // Global discount fields
+        global_discount_amount: pesanan.global_discount_amount || 0,
+        global_discount_percentage: pesanan.global_discount_percentage || 0
       })
       .select()
       .single();
