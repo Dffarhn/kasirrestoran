@@ -32,7 +32,7 @@ const Header = () => {
             <div className="relative flex-shrink-0">
               <img
                 src="/logo.png"
-                alt="POS Kasir Logo"
+                alt="Mibebi-Kasir Logo"
                 className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-contain shadow-lg ring-2 ring-[#FFD700] bg-white p-1"
               />
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-[#FFD700] rounded-full border-2 border-[#0D0D0D]"></div>

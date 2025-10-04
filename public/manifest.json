@@ -1,6 +1,6 @@
 {
-  "name": "MenuDigital POS - Menu Digital & POS Kasir Modern",
-  "short_name": "MenuDigital POS",
+  "name": "Mibebi-Kasir",
+  "short_name": "Mibebi-Kasir",
   "description": "Solusi lengkap untuk restoran, cafe, dan toko. Pesan online, pembayaran digital, dan manajemen menu terintegrasi.",
   "start_url": "/",
   "display": "standalone",
@@ -30,7 +30,7 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "MenuDigital POS Dashboard"
+      "label": "Mibebi-Kasir Dashboard"
     }
   ],
   "shortcuts": [
