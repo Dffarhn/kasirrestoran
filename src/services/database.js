@@ -486,10 +486,49 @@ export const createPesananOnline = async (orderData) => {
 
     if (detailError) throw detailError;
 
+    // 🆕 KIRIM NOTIFIKASI SETELAH PESANAN BERHASIL DIBUAT
+    try {
+      await sendOrderNotification({
+        order_id: pesanan.id,
+        toko_id: pesanan.toko_id,
+        customer_name: pesanan.customer_name,
+        total_amount: pesanan.total_amount,
+        created_at: pesanan.created_at
+      });
+    } catch (notificationError) {
+      // Log error tapi jangan ganggu flow utama
+      console.warn('Notification failed but order was created successfully:', notificationError);
+    }
+
     return pesanan;
   } catch (error) {
     console.error('Error creating pesanan online:', error);
     throw error;
+  }
+};
+
+/**
+ * Send order notification to kasir devices
+ */
+export const sendOrderNotification = async (notificationData) => {
+  try {
+    console.log('Sending notification with data:', notificationData);
+    
+    const { data, error } = await supabase.functions.invoke('send-order-notification', {
+      body: notificationData
+    });
+    
+    if (error) {
+      throw new Error(`Supabase function error: ${error.message}`);
+    }
+    
+    console.log('✅ Notification sent successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Error sending notification:', error);
+    // Jangan throw error di sini, biarkan order tetap tersimpan
+    // meskipun notifikasi gagal
+    return null;
   }
 };
 
