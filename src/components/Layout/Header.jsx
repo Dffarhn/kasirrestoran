@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useCart } from '../../context/CartContext';
-import { ShoppingCart, MapPin } from 'lucide-react';
+import { ShoppingCart, MapPin, Clock } from 'lucide-react';
 import { safeBuildUrl } from '../../utils/safeNavigation';
 
 const Header = () => {
@@ -89,11 +89,26 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Cart Button */}
-          <Link
-            to={safeBuildUrl("/cart")}
-            className="relative group"
-          >
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Kitchen Queue Button */}
+            <Link
+              to={safeBuildUrl("/order-status")}
+              className="relative group"
+            >
+              <div className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200" />
+                <span className="hidden sm:block text-sm font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">
+                  Antrian
+                </span>
+              </div>
+            </Link>
+
+            {/* Cart Button */}
+            <Link
+              to={safeBuildUrl("/cart")}
+              className="relative group"
+            >
             <div className="flex items-center space-x-2 sm:space-x-3 px-4 sm:px-5 py-3 sm:py-3.5 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
               {/* Cart Icon */}
               <div className="relative z-10">
@@ -119,6 +134,7 @@ const Header = () => {
               </span>
             )}
           </Link>
+          </div>
         </div>
       </div>
     </header>

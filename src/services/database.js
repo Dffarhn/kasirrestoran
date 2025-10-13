@@ -500,6 +500,8 @@ export const createPesananOnline = async (orderData) => {
       console.warn('Notification failed but order was created successfully:', notificationError);
     }
 
+    // Auto-create kitchen queue dipindahkan ke aplikasi Flutter (single source of truth)
+
     return pesanan;
   } catch (error) {
     console.error('Error creating pesanan online:', error);

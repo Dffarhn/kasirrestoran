@@ -5,6 +5,7 @@ import MenuPage from './pages/MenuPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import OrderStatusPage from './pages/OrderStatusPage';
 import FloatingCartButton from './components/UI/FloatingCartButton';
 import { CartProvider } from './context/CartContext';
 import { RestaurantProvider } from './context/RestaurantContext';
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/confirmation" element={<OrderConfirmationPage />} />
+                <Route path="/order-status" element={<OrderStatusPage />} />
               </Routes>
             </main>
             <FloatingCartButton />

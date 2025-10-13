@@ -1,5 +1,4 @@
-import { supabase } from './supabase';
-
+import { supabase } from '../lib/supabase'
 /**
  * Service untuk real-time sync pesanan online
  * Menggunakan Supabase Realtime untuk mendengarkan perubahan di database
@@ -91,6 +90,87 @@ class RealtimeService {
   }
 
   /**
+   * Subscribe ke kitchen queue untuk toko tertentu
+   * 
+   * @param {string} tokoId - ID toko
+   * @param {string|null} status - Status pesanan (opsional)
+   * @param {boolean} includeItems - Include detail items
+   * @param {function} callback - Callback function untuk handle perubahan
+   * @returns {string} - Subscription ID untuk unsubscribe
+   */
+  subscribeToKitchenQueue({
+    tokoId,
+    status = null,
+    includeItems = true,
+    callback
+  }) {
+    const subscriptionId = `kitchen_queue_${tokoId}_${status || 'all'}_${Date.now()}`;
+    
+    console.log('🔗 Creating kitchen queue subscription:', {
+      subscriptionId,
+      tokoId,
+      status,
+      includeItems
+    });
+    
+    // Subscribe ke perubahan real-time
+    const subscription = supabase
+      .channel(`kitchen_queue_${tokoId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'kitchen_queue',
+        filter: `toko_id=eq.${tokoId}`
+      }, (payload) => {
+        console.log('📡 Kitchen queue real-time update:', payload);
+        callback(payload);
+      })
+      .subscribe((status) => {
+        console.log('📡 Kitchen queue subscription status:', status);
+      });
+
+    this.subscriptions.set(subscriptionId, subscription);
+    this.listeners.set(subscriptionId, callback);
+
+    // Load data awal
+    console.log('📊 Loading initial kitchen data...');
+    this.loadInitialKitchenData(tokoId, status, includeItems, callback);
+
+    return subscriptionId;
+  }
+
+  /**
+   * Subscribe ke kitchen items untuk tracking progress
+   * 
+   * @param {string} tokoId - ID toko
+   * @param {function} callback - Callback function
+   * @returns {string} - Subscription ID
+   */
+  subscribeToKitchenItems({
+    tokoId,
+    callback
+  }) {
+    const subscriptionId = `kitchen_items_${tokoId}_${Date.now()}`;
+    
+    const subscription = supabase
+      .channel(`kitchen_items_${tokoId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'kitchen_queue_items'
+      }, (payload) => {
+        console.log('Kitchen items real-time update:', payload);
+        callback(payload);
+      })
+      .subscribe();
+
+    this.subscriptions.set(subscriptionId, subscription);
+    this.listeners.set(subscriptionId, callback);
+
+    return subscriptionId;
+  }
+
+  /**
    * Load data awal saat subscribe
    */
   async loadInitialData(tokoId, status, includeDetails, callback) {
@@ -117,6 +197,43 @@ class RealtimeService {
     } catch (error) {
       console.error('Error loading initial data:', error);
       callback({ type: 'error', error });
+    }
+  }
+
+  /**
+   * Load data awal kitchen queue saat subscribe
+   */
+  async loadInitialKitchenData(tokoId, status, includeItems, callback) {
+    try {
+      console.log('📊 Loading kitchen data with params:', { tokoId, status, includeItems });
+      
+      let query = supabase
+        .from('kitchen_queue')
+        .select(includeItems ? '*, kitchen_queue_items(*)' : '*')
+        .eq('toko_id', tokoId)
+        .order('created_at', { ascending: false });
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      const { data, error } = await query;
+
+      console.log('📊 Kitchen data query result:', { data, error });
+
+      if (error) {
+        console.error('❌ Error loading initial kitchen data:', error);
+        // Jika tabel tidak ada atau error, return empty array
+        callback({ type: 'initial_data', data: [] });
+        return;
+      }
+
+      console.log('✅ Kitchen data loaded successfully:', data?.length || 0, 'records');
+      callback({ type: 'initial_data', data: data || [] });
+    } catch (error) {
+      console.error('❌ Error loading initial kitchen data:', error);
+      // Return empty array jika error
+      callback({ type: 'initial_data', data: [] });
     }
   }
 

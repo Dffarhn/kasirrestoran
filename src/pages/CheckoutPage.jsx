@@ -68,6 +68,9 @@ const CheckoutPage = () => {
 
       const pesanan = await createPesananOnline(orderData);
       
+      // Trigger refresh kitchen queue untuk real-time update
+      console.log('🔄 Kitchen queue auto-created, triggering real-time update...');
+      
       // Clear cart
       clearCart();
       
