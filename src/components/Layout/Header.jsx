@@ -1,13 +1,38 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useCart } from '../../context/CartContext';
-import { ShoppingCart, MapPin, Clock } from 'lucide-react';
+import { useSession } from '../../context/SessionContext';
+import { ShoppingCart, MapPin, Clock, Receipt } from 'lucide-react';
 import { safeBuildUrl } from '../../utils/safeNavigation';
+import CloseBillModal from '../UI/CloseBillModal';
 
 const Header = () => {
   const { restaurant, tableNumber, loading } = useRestaurant();
   const { getTotalItems } = useCart();
+  const { session, sessionOrders, sessionTotal, closeBill, loading: sessionLoading } = useSession();
+  const navigate = useNavigate();
+  const [showCloseBillModal, setShowCloseBillModal] = useState(false);
+
+  const handleCloseBillClick = () => {
+    setShowCloseBillModal(true);
+  };
+
+  const handleCloseBillConfirm = async () => {
+    try {
+      const summaryData = await closeBill();
+      // Redirect ke halaman summary dengan data
+      navigate(safeBuildUrl('/close-bill-summary'), {
+        state: { summaryData }
+      });
+    } catch (error) {
+      alert('Error closing session: ' + error.message);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowCloseBillModal(false);
+  };
 
   if (loading) {
     return (
@@ -24,6 +49,7 @@ const Header = () => {
   }
 
   return (
+    <>
     <header className="sticky top-0 z-50 bg-[#0D0D0D] backdrop-blur-xl border-b-2 border-[#FFD700] shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
@@ -91,6 +117,25 @@ const Header = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Close Bill Button - trigger modal */}
+            {session && (
+              <button
+                onClick={handleCloseBillClick}
+                disabled={sessionLoading}
+                className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D] disabled:bg-[#333333] disabled:border-[#555555] disabled:text-[#B3B3B3] disabled:cursor-not-allowed"
+              >
+                <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700] transition-colors duration-200" />
+                <div className="text-center">
+                  <div className="text-xs font-semibold text-[#FFD700] transition-colors duration-200">
+                    {sessionLoading ? 'Processing...' : 'Close Bill'}
+                  </div>
+                  <div className="text-xs text-[#B3B3B3] transition-colors duration-200">
+                    Rp {(sessionTotal || 0).toLocaleString()}
+                  </div>
+                </div>
+              </button>
+            )}
+
             {/* Kitchen Queue Button */}
             <Link
               to={safeBuildUrl("/order-status")}
@@ -137,7 +182,21 @@ const Header = () => {
           </div>
         </div>
       </div>
+
     </header>
+    {/* Close Bill Modal - render as sibling to header to allow full-screen overlay */}
+    <CloseBillModal
+      isOpen={showCloseBillModal}
+      onClose={handleCloseModal}
+      onConfirm={handleCloseBillConfirm}
+      sessionData={{
+        tableNumber: session?.table_number,
+        ordersCount: sessionOrders?.length || 0,
+        totalAmount: sessionTotal || 0
+      }}
+      loading={sessionLoading}
+    />
+    </>
   );
 };
 

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { searchCustomerByPhone } from '../../services/database';
 import { useRestaurant } from '../../context/RestaurantContext';
+import { useSession } from '../../context/SessionContext';
 
 const CustomerInfo = ({ customerInfo, setCustomerInfo }) => {
   const { restaurant } = useRestaurant();
+  const { customerData } = useSession();
   const [isSearching, setIsSearching] = useState(false);
   const [customerFound, setCustomerFound] = useState(null);
 
@@ -54,9 +56,19 @@ const CustomerInfo = ({ customerInfo, setCustomerInfo }) => {
 
   return (
     <div className="bg-[#1A1A1A] rounded-lg shadow-sm border border-[#333333] p-4">
-      <h2 className="text-base font-semibold text-[#FFFFFF] mb-3" style={{fontFamily: 'Playfair Display, serif'}}>
-        Informasi Pelanggan
-      </h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base font-semibold text-[#FFFFFF]" style={{fontFamily: 'Playfair Display, serif'}}>
+          Informasi Pelanggan
+        </h2>
+        {customerData && (customerData.name || customerData.phone) && (
+          <div className="flex items-center space-x-1 text-xs text-[#FFD700]">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span>Data tersimpan</span>
+          </div>
+        )}
+      </div>
       
       <div className="space-y-3">
         <div>

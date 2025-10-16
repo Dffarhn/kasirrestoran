@@ -1,17 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRestaurant } from '../context/RestaurantContext';
 import { useCart } from '../context/CartContext';
+import { useSession } from '../context/SessionContext';
 import OrderDetails from '../components/Confirmation/OrderDetails';
 import PaymentInstructions from '../components/Confirmation/PaymentInstructions';
+import CloseBillModal from '../components/UI/CloseBillModal';
 import { safeBuildUrl } from '../utils/safeNavigation';
 
 const OrderConfirmationPage = () => {
   const { restaurant, tableNumber } = useRestaurant();
   const { getGlobalDiscountInfo, getGlobalDiscountAmount, getTotalPriceWithGlobalDiscount } = useCart();
+  const { session, sessionOrders, sessionTotal, closeBill, loading: sessionLoading } = useSession();
   const location = useLocation();
+  const navigate = useNavigate();
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showCloseBillModal, setShowCloseBillModal] = useState(false);
+
+  const handleCloseBillClick = () => {
+    setShowCloseBillModal(true);
+  };
+
+  const handleCloseBillConfirm = async () => {
+    try {
+      const summaryData = await closeBill();
+      // Redirect ke halaman summary dengan data
+      navigate(safeBuildUrl('/close-bill-summary'), {
+        state: { summaryData }
+      });
+    } catch (error) {
+      alert('Error closing session: ' + error.message);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowCloseBillModal(false);
+  };
 
   useEffect(() => {
     // Ambil data order dari state navigation atau localStorage
@@ -133,6 +158,29 @@ const OrderConfirmationPage = () => {
 
         {/* Order Status & Summary */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Session Info & Close Bill Button */}
+          {session && sessionOrders.length > 0 && (
+            <div className="bg-[#1A1A1A] rounded-lg shadow-sm border border-[#333333] p-6">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-[#FFD700] mb-2">Session Aktif</h3>
+                <div className="text-sm text-[#B3B3B3]">
+                  Total Session: <span className="text-[#FFD700] font-semibold">Rp {sessionTotal.toLocaleString()}</span>
+                </div>
+                <div className="text-xs text-[#B3B3B3] mt-1">
+                  {sessionOrders.length} orders dalam session
+                </div>
+              </div>
+              
+              <button
+                onClick={handleCloseBillClick}
+                disabled={sessionLoading}
+                className="w-full px-4 py-3 bg-[#FFD700] text-[#0D0D0D] font-semibold rounded-lg hover:bg-[#E6B800] transition-colors disabled:bg-[#333333] disabled:text-[#B3B3B3] disabled:cursor-not-allowed"
+              >
+                {sessionLoading ? 'Memproses...' : 'Close Bill & Akhiri Session'}
+              </button>
+            </div>
+          )}
+
           {/* Order Summary */}
           <div className="bg-[#1A1A1A] rounded-lg shadow-sm border border-[#333333] p-6">
             <h3 className="text-lg font-semibold text-[#FFFFFF] mb-4" style={{fontFamily: 'Playfair Display, serif'}}>
@@ -187,6 +235,19 @@ const OrderConfirmationPage = () => {
           Cetak Struk
         </button>
       </div>
+
+      {/* Close Bill Modal */}
+      <CloseBillModal
+        isOpen={showCloseBillModal}
+        onClose={handleCloseModal}
+        onConfirm={handleCloseBillConfirm}
+        sessionData={{
+          tableNumber: session?.table_number,
+          ordersCount: sessionOrders?.length || 0,
+          totalAmount: sessionTotal || 0
+        }}
+        loading={sessionLoading}
+      />
     </div>
   );
 };

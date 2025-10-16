@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import { createPesananOnline, getAdminFee } from '../services/database';
+import { useSession } from '../context/SessionContext';
 import OrderSummary from '../components/Checkout/OrderSummary';
 import CustomerInfo from '../components/Checkout/CustomerInfo';
 import PaymentMethod from '../components/Checkout/PaymentMethod';
@@ -20,20 +21,38 @@ const CheckoutPage = () => {
     clearCart 
   } = useCart();
   const { restaurant, tableNumber } = useRestaurant();
+  const { session, customerData, createNewSession, refreshSession, updateCustomerData } = useSession();
   
   const [customerInfo, setCustomerInfo] = useState({
-    name: '',
-    phone: '',
+    name: customerData?.name || '',
+    phone: customerData?.phone || '',
     customerId: null
   });
   const [orderNotes, setOrderNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto-fill customer data dari session
+  useEffect(() => {
+    if (customerData) {
+      setCustomerInfo(prev => ({
+        ...prev,
+        name: customerData.name || prev.name,
+        phone: customerData.phone || prev.phone
+      }));
+    }
+  }, [customerData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
+      // Pastikan ada session: jika belum ada, buat session baru berdasarkan toko & table
+      let currentSession = session;
+      if (!currentSession) {
+        currentSession = await createNewSession(restaurant.id, tableNumber, customerInfo);
+      }
+
       // Get admin fee from database
       const adminFee = await getAdminFee();
       const subtotal = getTotalPrice(); // Subtotal SEBELUM global discount
@@ -41,7 +60,7 @@ const CheckoutPage = () => {
       const finalSubtotal = getTotalPriceWithGlobalDiscount(); // Subtotal SETELAH global discount
       const total = finalSubtotal + adminFee;
 
-      // Submit pesanan online
+      // Submit pesanan online (include session bila ada)
       const orderData = {
         tokoId: restaurant.id,
         tableNumber: tableNumber,
@@ -63,14 +82,34 @@ const CheckoutPage = () => {
         adminFee: adminFee,
         globalDiscountAmount: globalDiscountAmount,
         globalDiscountPercentage: getGlobalDiscountInfo()?.percentage || 0,
-        isAnonymous: false
+        isAnonymous: false,
+        session_id: currentSession?.id || null,
+        session_token: currentSession?.session_token || null
       };
 
+      // Debug logging untuk session data
+      console.log('CheckoutPage - currentSession:', currentSession);
+      console.log('CheckoutPage - session_id:', orderData.session_id);
+      console.log('CheckoutPage - session_token:', orderData.session_token);
+
       const pesanan = await createPesananOnline(orderData);
+      
+      // Update customer data di session untuk auto-fill pesanan berikutnya
+      if (currentSession?.session_token) {
+        await updateCustomerData({
+          name: customerInfo.name,
+          phone: customerInfo.phone
+        });
+      }
       
       // Trigger refresh kitchen queue untuk real-time update
       console.log('🔄 Kitchen queue auto-created, triggering real-time update...');
       
+      // Refresh session data jika ada
+      if (session?.session_token) {
+        await refreshSession();
+      }
+
       // Clear cart
       clearCart();
       

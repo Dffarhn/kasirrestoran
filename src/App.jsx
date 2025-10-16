@@ -9,6 +9,10 @@ import OrderStatusPage from './pages/OrderStatusPage';
 import FloatingCartButton from './components/UI/FloatingCartButton';
 import { CartProvider } from './context/CartContext';
 import { RestaurantProvider } from './context/RestaurantContext';
+import { SessionProvider } from './context/SessionContext';
+import SessionHistory from './components/Session/SessionHistory';
+import SessionBootstrap from './components/Session/SessionBootstrap';
+import CloseBillSummaryPage from './pages/CloseBillSummaryPage';
 
 // Scroll to top component
 const ScrollToTop = () => {
@@ -29,24 +33,29 @@ const ScrollToTop = () => {
 function App() {
   return (
     <RestaurantProvider>
-      <CartProvider>
-        <Router>
-          <ScrollToTop />
-          <div className="min-h-screen bg-[#0D0D0D]">
-            <Header />
-            <main className="pb-20">
-              <Routes>
-                <Route path="/" element={<MenuPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/confirmation" element={<OrderConfirmationPage />} />
-                <Route path="/order-status" element={<OrderStatusPage />} />
-              </Routes>
-            </main>
-            <FloatingCartButton />
-          </div>
-        </Router>
-      </CartProvider>
+      <SessionProvider>
+        <CartProvider>
+          <Router>
+            <ScrollToTop />
+            <div className="min-h-screen bg-[#0D0D0D]">
+              <Header />
+              <main className="pb-20">
+                <SessionBootstrap />
+                <Routes>
+                  <Route path="/" element={<MenuPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/confirmation" element={<OrderConfirmationPage />} />
+                  <Route path="/order-status" element={<OrderStatusPage />} />
+                  <Route path="/session-history" element={<SessionHistory />} />
+                  <Route path="/close-bill-summary" element={<CloseBillSummaryPage />} />
+                </Routes>
+              </main>
+              <FloatingCartButton />
+            </div>
+          </Router>
+        </CartProvider>
+      </SessionProvider>
     </RestaurantProvider>
   );
 }

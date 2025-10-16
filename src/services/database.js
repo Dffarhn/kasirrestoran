@@ -438,6 +438,11 @@ export const createPesananOnline = async (orderData) => {
       customerId = customer.id;
     }
 
+    // Debug logging untuk session data
+    console.log('createPesananOnline - session_id:', orderData.session_id);
+    console.log('createPesananOnline - session_token:', orderData.session_token);
+    console.log('createPesananOnline - orderData keys:', Object.keys(orderData));
+
     // Create pesanan_online
     const { data: pesanan, error: pesananError } = await supabase
       .from('pesanan_online')
@@ -455,6 +460,9 @@ export const createPesananOnline = async (orderData) => {
         customer_type: 'online',
         status: 'pending',
         pelanggan_id: customerId,
+        // Session fields
+        session_id: orderData.session_id || null,
+        session_token: orderData.session_token || null,
         // Global discount fields
         global_discount_amount: orderData.globalDiscountAmount || 0,
         global_discount_percentage: orderData.globalDiscountPercentage || 0

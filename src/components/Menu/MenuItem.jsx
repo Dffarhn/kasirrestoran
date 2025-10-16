@@ -56,15 +56,6 @@ const MenuItem = ({ item }) => {
   const discountAmount = Math.round((basePrice * discountPercentage) / 100);
   const displayPrice = basePrice - discountAmount;
 
-  // Debug logging
-  console.log('MenuItem Debug:', {
-    itemName: item.name,
-    basePrice,
-    discountPercentage,
-    discountAmount,
-    displayPrice,
-    item: item
-  });
 
   // Get menu image URL
   const menuImageUrl = getMenuImageUrl(item);
