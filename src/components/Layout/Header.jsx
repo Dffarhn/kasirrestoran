@@ -20,6 +20,8 @@ const Header = () => {
 
   const handleCloseBillConfirm = async () => {
     try {
+      // Tutup modal terlebih dahulu agar tidak tertinggal di UI
+      setShowCloseBillModal(false);
       const summaryData = await closeBill();
       // Redirect ke halaman summary dengan data
       navigate(safeBuildUrl('/close-bill-summary'), {

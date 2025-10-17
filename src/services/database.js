@@ -508,7 +508,14 @@ export const createPesananOnline = async (orderData) => {
       console.warn('Notification failed but order was created successfully:', notificationError);
     }
 
-    // Auto-create kitchen queue dipindahkan ke aplikasi Flutter (single source of truth)
+    // Auto-create kitchen queue dari pesanan
+    try {
+      await createKitchenQueueFromPesanan(pesanan.id, orderData);
+      console.log('✅ Kitchen queue auto-created for pesanan:', pesanan.id);
+    } catch (kitchenError) {
+      // Log error tapi jangan ganggu flow utama
+      console.warn('Kitchen queue creation failed but order was created successfully:', kitchenError);
+    }
 
     return pesanan;
   } catch (error) {
@@ -539,6 +546,91 @@ export const sendOrderNotification = async (notificationData) => {
     // Jangan throw error di sini, biarkan order tetap tersimpan
     // meskipun notifikasi gagal
     return null;
+  }
+};
+
+/**
+ * Auto-create kitchen queue dari pesanan online
+ */
+export const createKitchenQueueFromPesanan = async (pesananId, orderData) => {
+  try {
+    console.log('🍳 Creating kitchen queue for pesanan:', pesananId);
+    
+    // 1. Get pesanan details dengan items
+    const { data: pesanan, error: pesananError } = await supabase
+      .from('pesanan_online')
+      .select(`
+        *,
+        pesanan_online_detail(*)
+      `)
+      .eq('id', pesananId)
+      .single();
+
+    if (pesananError) {
+      throw new Error(`Failed to fetch pesanan: ${pesananError.message}`);
+    }
+
+    if (!pesanan) {
+      throw new Error('Pesanan not found');
+    }
+
+    // 2. Create kitchen queue entry
+    const { data: kitchenQueue, error: kitchenError } = await supabase
+      .from('kitchen_queue')
+      .insert({
+        toko_id: orderData.tokoId,
+        source_type: 'online',
+        source_id: pesananId,
+        order_number: 'ORD-' + pesananId.substring(0, 8).toUpperCase(),
+        table_number: orderData.tableNumber,
+        customer_name: orderData.customerInfo.name,
+        customer_phone: orderData.customerInfo.phone,
+        customer_email: orderData.customerInfo.email || null,
+        status: 'pending',
+        total_amount: orderData.total,
+        subtotal: orderData.subtotal,
+        admin_fee: orderData.adminFee || 1000
+      })
+      .select()
+      .single();
+
+    if (kitchenError) {
+      throw new Error(`Failed to create kitchen queue: ${kitchenError.message}`);
+    }
+
+    console.log('✅ Kitchen queue created:', kitchenQueue.id);
+
+    // 3. Create kitchen queue items
+    if (pesanan.pesanan_online_detail && pesanan.pesanan_online_detail.length > 0) {
+      const items = pesanan.pesanan_online_detail.map(item => ({
+        kitchen_queue_id: kitchenQueue.id,
+        menu_id: item.menu_id,
+        menu_name: item.menu_name,
+        variasi_name: item.variasi_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        status: 'pending',
+        is_out: false,
+        item_notes: item.notes || null,
+        discount_percentage: item.discount_percentage || 0,
+        total_discount: item.total_discount || 0
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('kitchen_queue_items')
+        .insert(items);
+
+      if (itemsError) {
+        throw new Error(`Failed to create kitchen queue items: ${itemsError.message}`);
+      }
+
+      console.log('✅ Kitchen queue items created:', items.length, 'items');
+    }
+
+    return kitchenQueue;
+  } catch (error) {
+    console.error('❌ Error creating kitchen queue from pesanan:', error);
+    throw error;
   }
 };
 

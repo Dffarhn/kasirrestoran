@@ -102,8 +102,8 @@ const CheckoutPage = () => {
         });
       }
       
-      // Trigger refresh kitchen queue untuk real-time update
-      console.log('🔄 Kitchen queue auto-created, triggering real-time update...');
+      // Kitchen queue auto-created, triggering real-time update
+      console.log('🍳 Kitchen queue auto-created, triggering real-time update...');
       
       // Refresh session data jika ada
       if (session?.session_token) {
