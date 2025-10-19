@@ -4,6 +4,7 @@ import { useKitchenQueue } from '../hooks/useKitchenQueue';
 import OrderStatusCard from '../components/OrderStatus/OrderStatusCard';
 import QueuePosition from '../components/OrderStatus/QueuePosition';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
+import { checkKitchenModeEnabled } from '../services/database';
 
 const OrderStatusPage = () => {
   const { restaurant } = useRestaurant();
@@ -13,6 +14,8 @@ const OrderStatusPage = () => {
     error,
     refresh
   } = useKitchenQueue(restaurant?.id, null, true); // null = semua status
+  const [kitchenModeEnabled, setKitchenModeEnabled] = useState(false);
+  const [checkingKitchenMode, setCheckingKitchenMode] = useState(true);
 
   // Debug logging
   console.log('OrderStatusPage - restaurant:', restaurant);
@@ -52,7 +55,27 @@ const OrderStatusPage = () => {
     return `~${hours}j ${minutes}m`;
   };
 
-  if (loading) {
+  // Check kitchen mode when restaurant data is available
+  useEffect(() => {
+    const checkKitchenMode = async () => {
+      if (restaurant?.id) {
+        try {
+          setCheckingKitchenMode(true);
+          const enabled = await checkKitchenModeEnabled(restaurant.id);
+          setKitchenModeEnabled(enabled);
+        } catch (error) {
+          console.error('Error checking kitchen mode:', error);
+          setKitchenModeEnabled(false);
+        } finally {
+          setCheckingKitchenMode(false);
+        }
+      }
+    };
+
+    checkKitchenMode();
+  }, [restaurant?.id]);
+
+  if (loading || checkingKitchenMode) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
         <LoadingSpinner />
@@ -66,6 +89,35 @@ const OrderStatusPage = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-white mb-4">Error</h2>
           <p className="text-gray-400">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if kitchen mode is disabled
+  if (!kitchenModeEnabled) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="bg-[#1a1a1a] border-2 border-[#FFD700] rounded-2xl p-8 shadow-lg">
+            <div className="w-16 h-16 bg-[#FFD700] rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-[#0D0D0D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-[#FFD700] mb-4">
+              Fitur Antrian Tidak Tersedia
+            </h2>
+            <p className="text-gray-300 mb-6">
+              Fitur antrian dapur belum diaktifkan untuk toko ini. Silakan hubungi admin untuk mengaktifkan fitur ini.
+            </p>
+            <button
+              onClick={() => window.history.back()}
+              className="px-6 py-3 bg-[#FFD700] text-[#0D0D0D] font-semibold rounded-xl hover:bg-[#FFE55C] transition-colors duration-200"
+            >
+              Kembali
+            </button>
+          </div>
         </div>
       </div>
     );

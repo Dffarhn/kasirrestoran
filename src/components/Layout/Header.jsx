@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useCart } from '../../context/CartContext';
@@ -6,6 +6,7 @@ import { useSession } from '../../context/SessionContext';
 import { ShoppingCart, MapPin, Clock, Receipt } from 'lucide-react';
 import { safeBuildUrl } from '../../utils/safeNavigation';
 import CloseBillModal from '../UI/CloseBillModal';
+import { checkKitchenModeEnabled } from '../../services/database';
 
 const Header = () => {
   const { restaurant, tableNumber, loading } = useRestaurant();
@@ -13,6 +14,7 @@ const Header = () => {
   const { session, sessionOrders, sessionTotal, closeBill, loading: sessionLoading } = useSession();
   const navigate = useNavigate();
   const [showCloseBillModal, setShowCloseBillModal] = useState(false);
+  const [kitchenModeEnabled, setKitchenModeEnabled] = useState(false);
 
   const handleCloseBillClick = () => {
     setShowCloseBillModal(true);
@@ -35,6 +37,23 @@ const Header = () => {
   const handleCloseModal = () => {
     setShowCloseBillModal(false);
   };
+
+  // Check kitchen mode when restaurant data is available
+  useEffect(() => {
+    const checkKitchenMode = async () => {
+      if (restaurant?.id) {
+        try {
+          const enabled = await checkKitchenModeEnabled(restaurant.id);
+          setKitchenModeEnabled(enabled);
+        } catch (error) {
+          console.error('Error checking kitchen mode:', error);
+          setKitchenModeEnabled(false);
+        }
+      }
+    };
+
+    checkKitchenMode();
+  }, [restaurant?.id]);
 
   if (loading) {
     return (
@@ -138,18 +157,20 @@ const Header = () => {
               </button>
             )}
 
-            {/* Kitchen Queue Button */}
-            <Link
-              to={safeBuildUrl("/order-status")}
-              className="relative group"
-            >
-              <div className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
-                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200" />
-                <span className="hidden sm:block text-sm font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">
-                  Antrian
-                </span>
-              </div>
-            </Link>
+            {/* Kitchen Queue Button - Only show if kitchen mode is enabled */}
+            {kitchenModeEnabled && (
+              <Link
+                to={safeBuildUrl("/order-status")}
+                className="relative group"
+              >
+                <div className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200" />
+                  <span className="hidden sm:block text-sm font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">
+                    Antrian
+                  </span>
+                </div>
+              </Link>
+            )}
 
             {/* Cart Button */}
             <Link

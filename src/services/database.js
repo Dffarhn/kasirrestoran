@@ -49,6 +49,29 @@ export const getGlobalDiscount = async (tokoId) => {
 }
 
 /**
+ * Check if kitchen mode is enabled for the toko
+ */
+export const checkKitchenModeEnabled = async (tokoId) => {
+  try {
+    const { data, error } = await supabase
+      .from('toko')
+      .select('kitchen_mode_enabled')
+      .eq('id', tokoId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching kitchen mode status:', error)
+      return false // Default to disabled if error
+    }
+
+    return data.kitchen_mode_enabled || false
+  } catch (error) {
+    console.error('Error in checkKitchenModeEnabled:', error)
+    return false // Default to disabled if error
+  }
+}
+
+/**
  * Fetch toko (restaurant) data berdasarkan ID
  */
 export const fetchTokoById = async (tokoId) => {
@@ -508,10 +531,15 @@ export const createPesananOnline = async (orderData) => {
       console.warn('Notification failed but order was created successfully:', notificationError);
     }
 
-    // Auto-create kitchen queue dari pesanan
+    // Auto-create kitchen queue dari pesanan (hanya jika kitchen mode enabled)
     try {
-      await createKitchenQueueFromPesanan(pesanan.id, orderData);
-      console.log('✅ Kitchen queue auto-created for pesanan:', pesanan.id);
+      const kitchenModeEnabled = await checkKitchenModeEnabled(orderData.tokoId);
+      if (kitchenModeEnabled) {
+        await createKitchenQueueFromPesanan(pesanan.id, orderData);
+        console.log('✅ Kitchen queue auto-created for pesanan:', pesanan.id);
+      } else {
+        console.log('🚫 Kitchen mode disabled - skipping kitchen queue creation');
+      }
     } catch (kitchenError) {
       // Log error tapi jangan ganggu flow utama
       console.warn('Kitchen queue creation failed but order was created successfully:', kitchenError);
@@ -555,6 +583,13 @@ export const sendOrderNotification = async (notificationData) => {
 export const createKitchenQueueFromPesanan = async (pesananId, orderData) => {
   try {
     console.log('🍳 Creating kitchen queue for pesanan:', pesananId);
+    
+    // Double check kitchen mode (redundant but safe)
+    const kitchenModeEnabled = await checkKitchenModeEnabled(orderData.tokoId);
+    if (!kitchenModeEnabled) {
+      console.log('🚫 Kitchen mode disabled - skipping kitchen queue creation');
+      return null;
+    }
     
     // 1. Get pesanan details dengan items
     const { data: pesanan, error: pesananError } = await supabase
