@@ -32,10 +32,10 @@ const QueuePosition = ({
           </div>
           <div>
             <h3 className="text-base font-bold text-[#0D0D0D]">
-              Posisi Anda
+              {currentOrder.table_number ? `Meja ${currentOrder.table_number}` : (currentOrder.customer_name || 'Pelanggan')}
             </h3>
             <p className="text-xs text-[#0D0D0D] opacity-80">
-              {getStatusMessage()}
+              #{currentOrder.order_number} • {getStatusMessage()}
             </p>
           </div>
         </div>

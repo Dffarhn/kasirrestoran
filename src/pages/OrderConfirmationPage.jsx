@@ -5,38 +5,16 @@ import { useCart } from '../context/CartContext';
 import { useSession } from '../context/SessionContext';
 import OrderDetails from '../components/Confirmation/OrderDetails';
 import PaymentInstructions from '../components/Confirmation/PaymentInstructions';
-import CloseBillModal from '../components/UI/CloseBillModal';
 import { safeBuildUrl } from '../utils/safeNavigation';
 
 const OrderConfirmationPage = () => {
   const { restaurant, tableNumber } = useRestaurant();
   const { getGlobalDiscountInfo, getGlobalDiscountAmount, getTotalPriceWithGlobalDiscount } = useCart();
-  const { session, sessionOrders, sessionTotal, closeBill, loading: sessionLoading } = useSession();
+  const { session, sessionOrders, sessionTotal } = useSession();
   const location = useLocation();
   const navigate = useNavigate();
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showCloseBillModal, setShowCloseBillModal] = useState(false);
-
-  const handleCloseBillClick = () => {
-    setShowCloseBillModal(true);
-  };
-
-  const handleCloseBillConfirm = async () => {
-    try {
-      const summaryData = await closeBill();
-      // Redirect ke halaman summary dengan data
-      navigate(safeBuildUrl('/close-bill-summary'), {
-        state: { summaryData }
-      });
-    } catch (error) {
-      alert('Error closing session: ' + error.message);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowCloseBillModal(false);
-  };
 
   useEffect(() => {
     // Ambil data order dari state navigation atau localStorage
@@ -171,13 +149,12 @@ const OrderConfirmationPage = () => {
                 </div>
               </div>
               
-              <button
-                onClick={handleCloseBillClick}
-                disabled={sessionLoading}
-                className="w-full px-4 py-3 bg-[#FFD700] text-[#0D0D0D] font-semibold rounded-lg hover:bg-[#E6B800] transition-colors disabled:bg-[#333333] disabled:text-[#B3B3B3] disabled:cursor-not-allowed"
+              <Link
+                to={safeBuildUrl("/order-history")}
+                className="w-full px-4 py-3 bg-[#FFD700] text-[#0D0D0D] font-semibold rounded-lg hover:bg-[#E6B800] transition-colors text-center block"
               >
-                {sessionLoading ? 'Memproses...' : 'Close Bill & Akhiri Session'}
-              </button>
+                Lihat Riwayat Pesanan
+              </Link>
             </div>
           )}
 
@@ -236,18 +213,6 @@ const OrderConfirmationPage = () => {
         </button>
       </div>
 
-      {/* Close Bill Modal */}
-      <CloseBillModal
-        isOpen={showCloseBillModal}
-        onClose={handleCloseModal}
-        onConfirm={handleCloseBillConfirm}
-        sessionData={{
-          tableNumber: session?.table_number,
-          ordersCount: sessionOrders?.length || 0,
-          totalAmount: sessionTotal || 0
-        }}
-        loading={sessionLoading}
-      />
     </div>
   );
 };

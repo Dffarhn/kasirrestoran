@@ -5,38 +5,15 @@ import { useCart } from '../../context/CartContext';
 import { useSession } from '../../context/SessionContext';
 import { ShoppingCart, MapPin, Clock, Receipt } from 'lucide-react';
 import { safeBuildUrl } from '../../utils/safeNavigation';
-import CloseBillModal from '../UI/CloseBillModal';
 import { checkKitchenModeEnabled } from '../../services/database';
 
 const Header = () => {
   const { restaurant, tableNumber, loading } = useRestaurant();
   const { getTotalItems } = useCart();
-  const { session, sessionOrders, sessionTotal, closeBill, loading: sessionLoading } = useSession();
+  const { session, sessionOrders, sessionTotal } = useSession();
   const navigate = useNavigate();
-  const [showCloseBillModal, setShowCloseBillModal] = useState(false);
   const [kitchenModeEnabled, setKitchenModeEnabled] = useState(false);
 
-  const handleCloseBillClick = () => {
-    setShowCloseBillModal(true);
-  };
-
-  const handleCloseBillConfirm = async () => {
-    try {
-      // Tutup modal terlebih dahulu agar tidak tertinggal di UI
-      setShowCloseBillModal(false);
-      const summaryData = await closeBill();
-      // Redirect ke halaman summary dengan data
-      navigate(safeBuildUrl('/close-bill-summary'), {
-        state: { summaryData }
-      });
-    } catch (error) {
-      alert('Error closing session: ' + error.message);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowCloseBillModal(false);
-  };
 
   // Check kitchen mode when restaurant data is available
   useEffect(() => {
@@ -76,20 +53,22 @@ const Header = () => {
         <div className="flex justify-between items-center py-4">
           {/* Brand Section */}
           <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
-            <div className="relative flex-shrink-0">
+            <Link to={safeBuildUrl("/")} className="relative flex-shrink-0 group">
               <img
-                src="/logo.png"
+                src="/LogoMibebiTransparan.png"
                 alt="Mibebi-Kasir Logo"
-                className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-contain shadow-lg ring-2 ring-[#FFD700] bg-white p-1"
+                className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-contain shadow-lg ring-2 ring-[#FFD700] bg-white p-1 group-hover:ring-[#FFE55C] transition-all duration-200"
               />
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-[#FFD700] rounded-full border-2 border-[#0D0D0D]"></div>
-            </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-[#FFD700] rounded-full border-2 border-[#0D0D0D] group-hover:bg-[#FFE55C] transition-colors duration-200"></div>
+            </Link>
             <div className="min-w-0 flex-1">
               {/* Mobile: Simplified layout */}
               <div className="sm:hidden">
-                <h1 className="text-lg font-bold text-[#FFD700] truncate">
-                  {restaurant?.name}
-                </h1>
+x                <Link to={safeBuildUrl("/")} className="group">
+                  <h1 className="text-lg font-bold text-[#FFD700] truncate group-hover:text-[#FFE55C] transition-colors duration-200">
+                    {restaurant?.name}
+                  </h1>
+                </Link>
                 <div className="flex items-center space-x-2 mt-0.5">
                   <span className="text-xs text-[#B3B3B3]">Meja {tableNumber}</span>
                 </div>
@@ -101,9 +80,11 @@ const Header = () => {
               
               {/* Tablet: Medium layout */}
               <div className="hidden sm:block lg:hidden">
-                <h1 className="text-lg font-bold text-[#FFD700] truncate">
-                  {restaurant?.name}
-                </h1>
+                <Link to={safeBuildUrl("/")} className="group">
+                  <h1 className="text-lg font-bold text-[#FFD700] truncate group-hover:text-[#FFE55C] transition-colors duration-200">
+                    {restaurant?.name}
+                  </h1>
+                </Link>
                 <div className="flex items-center space-x-2 mt-0.5">
                   <span className="text-xs text-[#B3B3B3]">Meja {tableNumber}</span>
                 </div>
@@ -122,9 +103,11 @@ const Header = () => {
                   <span className="text-xs text-[#B3B3B3]">•</span>
                   <span className="text-xs text-[#B3B3B3]">Meja {tableNumber}</span>
                 </div>
-                <h1 className="text-xl font-bold text-[#FFD700] truncate">
-                  {restaurant?.name}
-                </h1>
+                <Link to={safeBuildUrl("/")} className="group">
+                  <h1 className="text-xl font-bold text-[#FFD700] truncate group-hover:text-[#FFE55C] transition-colors duration-200">
+                    {restaurant?.name}
+                  </h1>
+                </Link>
                 <p className="text-sm text-[#B3B3B3] line-clamp-1">
                   {restaurant?.description}
                 </p>
@@ -138,23 +121,22 @@ const Header = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Close Bill Button - trigger modal */}
+            {/* History Button - show order history */}
             {session && (
-              <button
-                onClick={handleCloseBillClick}
-                disabled={sessionLoading}
-                className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D] disabled:bg-[#333333] disabled:border-[#555555] disabled:text-[#B3B3B3] disabled:cursor-not-allowed"
+              <Link
+                to={safeBuildUrl("/order-history")}
+                className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D] group"
               >
-                <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700] transition-colors duration-200" />
+                <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200" />
                 <div className="text-center">
-                  <div className="text-xs font-semibold text-[#FFD700] transition-colors duration-200">
-                    {sessionLoading ? 'Processing...' : 'Close Bill'}
+                  <div className="text-xs font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">
+                    History
                   </div>
-                  <div className="text-xs text-[#B3B3B3] transition-colors duration-200">
-                    Rp {(sessionTotal || 0).toLocaleString()}
+                  <div className="text-xs text-[#B3B3B3] group-hover:text-[#0D0D0D] transition-colors duration-200">
+                    {sessionOrders?.length || 0} pesanan
                   </div>
                 </div>
-              </button>
+              </Link>
             )}
 
             {/* Kitchen Queue Button - Only show if kitchen mode is enabled */}
@@ -207,18 +189,6 @@ const Header = () => {
       </div>
 
     </header>
-    {/* Close Bill Modal - render as sibling to header to allow full-screen overlay */}
-    <CloseBillModal
-      isOpen={showCloseBillModal}
-      onClose={handleCloseModal}
-      onConfirm={handleCloseBillConfirm}
-      sessionData={{
-        tableNumber: session?.table_number,
-        ordersCount: sessionOrders?.length || 0,
-        totalAmount: sessionTotal || 0
-      }}
-      loading={sessionLoading}
-    />
     </>
   );
 };

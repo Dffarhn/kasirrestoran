@@ -51,7 +51,7 @@ const OrderStatusCard = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 mb-2">
             <h3 className="text-base font-bold text-gray-900 truncate">
-              #{order.order_number}
+              {order.table_number ? `Meja ${order.table_number}` : (order.customer_name || 'Pelanggan')}
             </h3>
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
               order.status === 'completed' 
@@ -70,7 +70,7 @@ const OrderStatusCard = ({
           <div className="space-y-1 text-xs text-gray-600">
             <div className="flex items-center space-x-1">
               <User className="w-3 h-3" />
-              <span className="truncate">{order.customer_name}</span>
+              <span className="truncate">{order.customer_name || 'Pelanggan'}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Clock className="w-3 h-3" />
