@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { normalizePhoneNumber, normalizePhoneForSearch } from '../utils/phoneNormalizer'
 
 // Database service layer untuk semua operasi database
 
@@ -254,16 +255,37 @@ export const fetchOrCreatePelanggan = async (tokoId, nama, noHp) => {
       throw new Error('Missing required parameters: tokoId, nama, or noHp');
     }
 
+    // Normalize phone number to +62 format
+    const normalizedPhone = normalizePhoneNumber(noHp);
+    
     // Clean phone number
-    const cleanPhone = noHp.replace(/[\s\-\(\)]/g, '');
+    const cleanPhone = normalizedPhone.replace(/[\s\-\(\)]/g, '');
 
-    // Coba cari pelanggan yang sudah ada
-    const { data: existingCustomer, error: searchError } = await supabase
+    // Coba cari pelanggan dengan format +62
+    let { data: existingCustomer, error: searchError } = await supabase
       .from('pelanggan')
       .select('*')
       .eq('toko_id', tokoId)
       .eq('no_hp', cleanPhone)
       .maybeSingle() // Use maybeSingle to avoid error when no rows
+
+    // Jika tidak ditemukan dengan format +62, coba format 0 (backward compatibility)
+    if (!existingCustomer && !searchError) {
+      const phoneWithZero = cleanPhone.replace(/^\+62/, '0');
+      const { data: existingCustomerZero, error: searchErrorZero } = await supabase
+        .from('pelanggan')
+        .select('*')
+        .eq('toko_id', tokoId)
+        .eq('no_hp', phoneWithZero)
+        .maybeSingle();
+      
+      if (existingCustomerZero) {
+        existingCustomer = existingCustomerZero;
+      }
+      if (searchErrorZero) {
+        searchError = searchErrorZero;
+      }
+    }
 
     if (searchError) {
       console.error('Error searching for customer:', searchError)
@@ -290,13 +312,13 @@ export const fetchOrCreatePelanggan = async (tokoId, nama, noHp) => {
       return existingCustomer
     }
 
-    // Create new customer
+    // Create new customer dengan format +62
     const { data: newCustomer, error: createError } = await supabase
       .from('pelanggan')
       .insert({
         toko_id: tokoId,
         nama,
-        no_hp: cleanPhone
+        no_hp: cleanPhone // Sudah dalam format +62
       })
       .select()
       .single()
@@ -363,6 +385,9 @@ export const createTransaksiDetail = async (detailData) => {
  */
 export const submitOrder = async (orderData) => {
   try {
+    // Normalize phone number sebelum create transaksi
+    const normalizedPhone = normalizePhoneNumber(orderData.customerInfo.phone);
+    
     // 1. Create transaksi
     const transaksi = await createTransaksi({
       toko_id: orderData.tokoId,
@@ -371,7 +396,7 @@ export const submitOrder = async (orderData) => {
       subtotal: orderData.subtotal,
       admin_fee: orderData.adminFee || 1000,
       nama_pembeli: orderData.customerInfo.name,
-      no_hp_pembeli: orderData.customerInfo.phone,
+      no_hp_pembeli: normalizedPhone,
       pelanggan_id: orderData.pelangganId,
       pesan: orderData.orderNotes,
       is_anonymous: orderData.isAnonymous || false,
@@ -417,15 +442,37 @@ export const searchCustomerByPhone = async (phone, tokoId) => {
       return null;
     }
 
-    // Clean phone number (remove spaces, dashes, etc.)
-    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    // Normalize phone number to +62 format
+    const normalizedPhone = normalizePhoneForSearch(phone);
     
-    const { data, error } = await supabase
+    // Clean phone number (remove spaces, dashes, etc.)
+    const cleanPhone = normalizedPhone.replace(/[\s\-\(\)]/g, '');
+    
+    // Search dengan format +62
+    let { data, error } = await supabase
       .from('pelanggan')
       .select('id, nama, no_hp')
       .eq('toko_id', tokoId)
       .eq('no_hp', cleanPhone)
-      .maybeSingle(); // Use maybeSingle instead of single to avoid error when no rows
+      .maybeSingle();
+
+    // Jika tidak ditemukan dengan format +62, coba format 0 (backward compatibility)
+    if (!data && !error) {
+      const phoneWithZero = cleanPhone.replace(/^\+62/, '0');
+      const { data: dataZero, error: errorZero } = await supabase
+        .from('pelanggan')
+        .select('id, nama, no_hp')
+        .eq('toko_id', tokoId)
+        .eq('no_hp', phoneWithZero)
+        .maybeSingle();
+      
+      if (dataZero) {
+        data = dataZero;
+      }
+      if (errorZero) {
+        error = errorZero;
+      }
+    }
 
     if (error) {
       console.error('Error searching customer:', error);
@@ -446,17 +493,20 @@ export const searchCustomerByPhone = async (phone, tokoId) => {
  */
 export const createPesananOnline = async (orderData) => {
   try {
+    // Normalize phone number sebelum digunakan
+    const normalizedPhone = normalizePhoneNumber(orderData.customerInfo.phone);
+    
     let customerId = null;
     
     // Jika customer ditemukan, gunakan ID-nya
     if (orderData.customerInfo.customerId) {
       customerId = orderData.customerInfo.customerId;
     } else {
-      // Jika customer baru, create atau update
+      // Jika customer baru, create atau update dengan nomor yang sudah dinormalisasi
       const customer = await fetchOrCreatePelanggan(
         orderData.tokoId,
         orderData.customerInfo.name,
-        orderData.customerInfo.phone
+        normalizedPhone
       );
       customerId = customer.id;
     }
@@ -472,7 +522,7 @@ export const createPesananOnline = async (orderData) => {
       .insert({
         toko_id: orderData.tokoId,
         customer_name: orderData.customerInfo.name,
-        customer_phone: orderData.customerInfo.phone,
+        customer_phone: normalizedPhone,
         customer_email: null,
         table_number: orderData.tableNumber,
         order_notes: orderData.orderNotes,
@@ -610,6 +660,9 @@ export const createKitchenQueueFromPesanan = async (pesananId, orderData) => {
     }
 
     // 2. Create kitchen queue entry
+    // Normalize phone number sebelum insert
+    const normalizedPhone = normalizePhoneNumber(orderData.customerInfo.phone);
+    
     const { data: kitchenQueue, error: kitchenError } = await supabase
       .from('kitchen_queue')
       .insert({
@@ -619,7 +672,7 @@ export const createKitchenQueueFromPesanan = async (pesananId, orderData) => {
         order_number: 'ORD-' + pesananId.substring(0, 8).toUpperCase(),
         table_number: orderData.tableNumber,
         customer_name: orderData.customerInfo.name,
-        customer_phone: orderData.customerInfo.phone,
+        customer_phone: normalizedPhone,
         customer_email: orderData.customerInfo.email || null,
         status: 'pending',
         total_amount: orderData.total,

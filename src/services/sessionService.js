@@ -1,15 +1,19 @@
 import { supabase } from '../lib/supabase';
+import { normalizePhoneNumber } from '../utils/phoneNormalizer';
 
 export const generateSessionToken = () => {
   return 'sess_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
 };
 
 export const createCustomerSession = async ({ toko_id, table_number, customer_name, customer_phone }) => {
+  // Normalize phone number sebelum insert
+  const normalizedPhone = normalizePhoneNumber(customer_phone);
+  
   const { data: sessionId, error } = await supabase.rpc('create_customer_session', {
     p_toko_id: toko_id,
     p_table_number: table_number,
     p_customer_name: customer_name,
-    p_customer_phone: customer_phone
+    p_customer_phone: normalizedPhone
   });
   if (error) throw error;
 
@@ -68,11 +72,14 @@ export const updateSessionActivity = async (sessionToken) => {
 };
 
 export const updateSessionCustomerData = async (sessionToken, customerData) => {
+  // Normalize phone number sebelum update
+  const normalizedPhone = normalizePhoneNumber(customerData.phone);
+  
   const { data, error } = await supabase
     .from('customer_sessions')
     .update({
       customer_name: customerData.name,
-      customer_phone: customerData.phone,
+      customer_phone: normalizedPhone,
       last_activity_at: new Date().toISOString()
     })
     .eq('session_token', sessionToken)

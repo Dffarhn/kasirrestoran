@@ -119,71 +119,74 @@ x                <Link to={safeBuildUrl("/")} className="group">
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* History Button - show order history */}
+          {/* Action Buttons - Mobile Optimized */}
+          <div className="flex items-center space-x-1.5 sm:space-x-2 md:space-x-3">
+            {/* History Button - Compact on mobile */}
             {session && (
               <Link
                 to={safeBuildUrl("/order-history")}
-                className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D] group"
+                className="relative group flex-shrink-0"
               >
-                <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200" />
-                <div className="text-center">
-                  <div className="text-xs font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">
-                    History
+                <div className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
+                  <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200 flex-shrink-0" />
+                  {/* Mobile: Hide text, show badge */}
+                  <div className="hidden sm:block text-center">
+                    <div className="text-xs font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">
+                      History
+                    </div>
+                    <div className="text-xs text-[#B3B3B3] group-hover:text-[#0D0D0D] transition-colors duration-200">
+                      {sessionOrders?.length || 0} pesanan
+                    </div>
                   </div>
-                  <div className="text-xs text-[#B3B3B3] group-hover:text-[#0D0D0D] transition-colors duration-200">
-                    {sessionOrders?.length || 0} pesanan
-                  </div>
+                  {/* Mobile badge */}
+                  {sessionOrders?.length > 0 && (
+                    <span className="sm:hidden absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold shadow-lg border border-white">
+                      {sessionOrders.length}
+                    </span>
+                  )}
                 </div>
               </Link>
             )}
 
-            {/* Kitchen Queue Button - Only show if kitchen mode is enabled */}
+            {/* Kitchen Queue Button - Compact on mobile */}
             {kitchenModeEnabled && (
               <Link
                 to={safeBuildUrl("/order-status")}
-                className="relative group"
+                className="relative group flex-shrink-0"
               >
-                <div className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
+                <div className="flex items-center justify-center px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
                   <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200" />
-                  <span className="hidden sm:block text-sm font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">
+                  <span className="hidden md:block ml-2 text-sm font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">
                     Antrian
                   </span>
                 </div>
               </Link>
             )}
 
-            {/* Cart Button */}
+            {/* Cart Button - Always visible, compact on mobile */}
             <Link
               to={safeBuildUrl("/cart")}
-              className="relative group"
+              className="relative group flex-shrink-0"
             >
-            <div className="flex items-center space-x-2 sm:space-x-3 px-4 sm:px-5 py-3 sm:py-3.5 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
-              {/* Cart Icon */}
-              <div className="relative z-10">
+              <div className="flex items-center justify-center px-2.5 sm:px-4 md:px-5 py-2.5 sm:py-3 md:py-3.5 bg-[#0D0D0D] border-2 border-[#FFD700] rounded-lg sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-[#FFD700] hover:text-[#0D0D0D]">
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200" />
+                
+                {/* Text - Hidden on mobile, shown on tablet+ */}
+                <div className="hidden sm:block ml-2 md:ml-3">
+                  <div className="text-sm font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">Keranjang</div>
+                  <div className="text-xs text-[#B3B3B3] group-hover:text-[#0D0D0D] transition-colors duration-200">{getTotalItems()} item</div>
+                </div>
+                
+                {/* Mobile: Show item count as badge only */}
               </div>
               
-              {/* Text - Hidden on mobile, shown on larger screens */}
-              <div className="hidden sm:block relative z-10">
-                <div className="text-sm font-semibold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">Keranjang</div>
-                <div className="text-xs text-[#B3B3B3] group-hover:text-[#0D0D0D] transition-colors duration-200">{getTotalItems()} item</div>
-              </div>
-              
-              {/* Mobile: Show item count next to icon */}
-              <div className="sm:hidden relative z-10">
-                <span className="text-sm font-bold text-[#FFD700] group-hover:text-[#0D0D0D] transition-colors duration-200">{getTotalItems()}</span>
-              </div>
-            </div>
-            
-            {/* Badge for items count - removed excessive animations */}
-            {getTotalItems() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center font-bold shadow-lg border-2 border-white">
-                {getTotalItems()}
-              </span>
-            )}
-          </Link>
+              {/* Badge for items count */}
+              {getTotalItems() > 0 && (
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center font-bold shadow-lg border-2 border-white">
+                  {getTotalItems()}
+                </span>
+              )}
+            </Link>
           </div>
         </div>
       </div>

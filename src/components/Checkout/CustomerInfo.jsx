@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { searchCustomerByPhone } from '../../services/database';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useSession } from '../../context/SessionContext';
+import { normalizePhoneNumber } from '../../utils/phoneNormalizer';
 
 const CustomerInfo = ({ customerInfo, setCustomerInfo }) => {
   const { restaurant } = useRestaurant();
@@ -17,20 +18,24 @@ const CustomerInfo = ({ customerInfo, setCustomerInfo }) => {
     if (phone.length >= 10) {
       setIsSearching(true);
       try {
-        const customer = await searchCustomerByPhone(phone, restaurant.id);
+        // Normalize phone number sebelum search
+        const normalizedPhone = normalizePhoneNumber(phone);
+        const customer = await searchCustomerByPhone(normalizedPhone, restaurant.id);
         if (customer) {
           setCustomerFound(customer);
           setCustomerInfo(prev => ({ 
             ...prev, 
             name: customer.nama,
-            customerId: customer.id 
+            customerId: customer.id,
+            phone: normalizedPhone // Simpan dalam format yang sudah dinormalisasi
           }));
         } else {
           setCustomerFound(null);
           setCustomerInfo(prev => ({ 
             ...prev, 
             name: '',
-            customerId: null 
+            customerId: null,
+            phone: normalizedPhone // Tetap simpan normalized phone untuk konsistensi
           }));
         }
       } catch (error) {
