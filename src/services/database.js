@@ -4,19 +4,95 @@ import { normalizePhoneNumber, normalizePhoneForSearch } from '../utils/phoneNor
 // Database service layer untuk semua operasi database
 
 /**
- * Get admin fee from database settings
+ * Helper function untuk mengambil admin fee dari admin_settings
+ * (digunakan sebagai fallback atau ketika admin_price_special = false)
+ * Membaca langsung dari tabel admin_settings, bukan dari RPC
  */
-export const getAdminFee = async () => {
+const getAdminFeeFromSettings = async () => {
   try {
     const { data, error } = await supabase
-      .rpc('get_admin_setting', { setting_key_param: 'admin_fee' })
+      .from('admin_settings')
+      .select('setting_value')
+      .eq('setting_key', 'admin_fee')
+      .single()
 
     if (error) {
-      console.error('Error fetching admin fee:', error)
+      console.error('Error fetching admin fee from settings:', error)
       return 1000 // Fallback to default
     }
 
-    return parseInt(data) || 1000
+    const adminFee = parseInt(data?.setting_value) || 1000
+    return adminFee
+  } catch (error) {
+    console.error('Error in getAdminFeeFromSettings:', error)
+    return 1000 // Fallback to default
+  }
+}
+
+/**
+ * Get admin fee from database settings
+ * Menggunakan logika yang sama dengan aplikasi kasir:
+ * - Jika toko.admin_price_special = true → gunakan toko.biaya_admin
+ * - Jika toko.admin_price_special = false → gunakan admin_settings.admin_fee
+ * 
+ * Mencoba menggunakan fungsi database get_admin_fee_for_toko terlebih dahulu (RECOMMENDED),
+ * jika tidak tersedia, menggunakan implementasi manual.
+ * 
+ * @param {string} tokoId - ID toko (required)
+ * @returns {Promise<number>} Admin fee dalam rupiah (integer)
+ */
+export const getAdminFee = async (tokoId) => {
+  try {
+    if (!tokoId) {
+      console.warn('getAdminFee: tokoId tidak diberikan, menggunakan fallback 1000')
+      return 1000
+    }
+
+    // Method 1: Coba gunakan fungsi database get_admin_fee_for_toko (RECOMMENDED)
+    try {
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_admin_fee_for_toko', { toko_uuid: tokoId })
+
+      if (!rpcError && rpcData !== null && rpcData !== undefined) {
+        const adminFee = parseInt(rpcData) || 1000
+        console.log('✅ Admin fee dari get_admin_fee_for_toko:', adminFee)
+        return adminFee
+      }
+    } catch (rpcError) {
+      // Jika RPC tidak tersedia, lanjut ke method manual
+      console.log('⚠️ Fungsi get_admin_fee_for_toko tidak tersedia, menggunakan method manual')
+    }
+
+    // Method 2: Implementasi manual (jika fungsi database tidak tersedia)
+    // 1. Ambil data toko untuk cek admin_price_special dan biaya_admin
+    const { data: tokoData, error: tokoError } = await supabase
+      .from('toko')
+      .select('biaya_admin, admin_price_special')
+      .eq('id', tokoId)
+      .single()
+
+    if (tokoError) {
+      console.error('Error fetching toko data:', tokoError)
+      // Fallback ke admin_settings jika error mengambil data toko
+      return await getAdminFeeFromSettings()
+    }
+
+    const useSpecialPrice = tokoData?.admin_price_special ?? false
+
+    if (useSpecialPrice) {
+      // Gunakan biaya admin dari tabel toko
+      const tokoAdminFee = tokoData?.biaya_admin
+      if (tokoAdminFee !== null && tokoAdminFee !== undefined) {
+        const adminFee = parseInt(tokoAdminFee) || 1000
+        console.log('✅ Admin fee dari toko.biaya_admin:', adminFee)
+        return adminFee
+      }
+    }
+
+    // Gunakan biaya admin dari admin_settings
+    const adminFee = await getAdminFeeFromSettings()
+    console.log('✅ Admin fee dari admin_settings:', adminFee)
+    return adminFee
   } catch (error) {
     console.error('Error in getAdminFee:', error)
     return 1000 // Fallback to default

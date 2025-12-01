@@ -54,7 +54,7 @@ const CheckoutPage = () => {
       }
 
       // Get admin fee from database
-      const adminFee = await getAdminFee();
+      const adminFee = await getAdminFee(restaurant.id);
       const subtotal = getTotalPrice(); // Subtotal SEBELUM global discount
       const globalDiscountAmount = getGlobalDiscountAmount();
       const finalSubtotal = getTotalPriceWithGlobalDiscount(); // Subtotal SETELAH global discount

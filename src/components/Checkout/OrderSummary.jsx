@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
+import { useRestaurant } from '../../context/RestaurantContext';
 import { getAdminFee } from '../../services/database';
 
 const OrderSummary = () => {
@@ -11,12 +12,15 @@ const OrderSummary = () => {
     getTotalPriceWithGlobalDiscount, 
     getGlobalDiscountInfo 
   } = useCart();
+  const { restaurant } = useRestaurant();
   const [adminFee, setAdminFee] = useState(1000); // Default fallback
 
   useEffect(() => {
     const fetchAdminFee = async () => {
+      if (!restaurant?.id) return; // Tunggu sampai restaurant tersedia
+      
       try {
-        const fee = await getAdminFee();
+        const fee = await getAdminFee(restaurant.id);
         setAdminFee(fee);
       } catch (error) {
         console.error('Error fetching admin fee:', error);
@@ -25,7 +29,7 @@ const OrderSummary = () => {
     };
 
     fetchAdminFee();
-  }, []);
+  }, [restaurant?.id]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
