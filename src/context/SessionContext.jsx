@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { 
   createCustomerSession,
   findActiveSession,
@@ -8,8 +8,11 @@ import {
   updateSessionCustomerData,
   closeSession
 } from '../services/sessionService';
+import { useRestaurant } from './RestaurantContext';
 
 const SessionContext = createContext();
+
+const getSessionTokenKey = (tokoId) => (tokoId ? `session_token_${tokoId}` : null);
 
 export const useSession = () => {
   const ctx = useContext(SessionContext);
@@ -18,21 +21,36 @@ export const useSession = () => {
 };
 
 export const SessionProvider = ({ children }) => {
+  const { restaurant } = useRestaurant();
   const [session, setSession] = useState(null);
   const [sessionOrders, setSessionOrders] = useState([]);
   const [sessionTotal, setSessionTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [customerData, setCustomerData] = useState(null);
 
-  const loadSessionData = async (sessionToken) => {
+  const tokenKey = getSessionTokenKey(restaurant?.id);
+
+  const loadSessionData = useCallback(async (sessionToken, currentTokoId) => {
     setLoading(true);
     try {
       const s = await getSessionByToken(sessionToken);
       if (!s || s.status !== 'active') {
-        localStorage.removeItem('session_token');
+        const key = getSessionTokenKey(currentTokoId);
+        if (key) localStorage.removeItem(key);
         setSession(null);
         setSessionOrders([]);
         setSessionTotal(0);
+        setCustomerData(null);
+        return;
+      }
+      // Session harus untuk toko yang sedang aktif
+      if (currentTokoId && s.toko_id !== currentTokoId) {
+        const key = getSessionTokenKey(currentTokoId);
+        if (key) localStorage.removeItem(key);
+        setSession(null);
+        setSessionOrders([]);
+        setSessionTotal(0);
+        setCustomerData(null);
         return;
       }
       const orders = await getSessionOrders(sessionToken);
@@ -64,12 +82,27 @@ export const SessionProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    const token = localStorage.getItem('session_token');
-    if (token) loadSessionData(token);
   }, []);
+
+  // Load session untuk toko aktif (setiap ganti toko, load token toko tersebut)
+  useEffect(() => {
+    if (!tokenKey) {
+      setSession(null);
+      setSessionOrders([]);
+      setSessionTotal(0);
+      setCustomerData(null);
+      return;
+    }
+    const token = localStorage.getItem(tokenKey);
+    if (token) {
+      loadSessionData(token, restaurant?.id);
+    } else {
+      setSession(null);
+      setSessionOrders([]);
+      setSessionTotal(0);
+      setCustomerData(null);
+    }
+  }, [tokenKey, restaurant?.id]);
 
   const createNewSession = async (tokoId, tableNumber, customerInfo) => {
     setLoading(true);
@@ -80,7 +113,8 @@ export const SessionProvider = ({ children }) => {
         customer_name: customerInfo?.name || null,
         customer_phone: customerInfo?.phone || null
       });
-      localStorage.setItem('session_token', s.session_token);
+      const key = getSessionTokenKey(tokoId);
+      if (key) localStorage.setItem(key, s.session_token);
       setSession(s);
       setSessionOrders([]);
       setSessionTotal(0);
@@ -104,8 +138,9 @@ export const SessionProvider = ({ children }) => {
     try {
       const s = await findActiveSession(tokoId, tableNumber);
       if (!s) return null;
-      localStorage.setItem('session_token', s.session_token);
-      await loadSessionData(s.session_token);
+      const key = getSessionTokenKey(tokoId);
+      if (key) localStorage.setItem(key, s.session_token);
+      await loadSessionData(s.session_token, tokoId);
       return s;
     } finally {
       setLoading(false);
@@ -113,7 +148,7 @@ export const SessionProvider = ({ children }) => {
   };
 
   const closeBill = async () => {
-    const token = localStorage.getItem('session_token');
+    const token = tokenKey ? localStorage.getItem(tokenKey) : null;
     if (!token) return false;
     setLoading(true);
     try {
@@ -133,13 +168,13 @@ export const SessionProvider = ({ children }) => {
       
       // Simpan summary data ke localStorage untuk halaman summary
       localStorage.setItem('close_bill_summary', JSON.stringify(summaryData));
-      // Simpan token session yang baru saja di-close untuk pemuatan data dari DB
-      if (summaryData.sessionToken) {
-        localStorage.setItem('closed_session_token', summaryData.sessionToken);
+      // Simpan token session yang baru saja di-close (per toko) untuk pemuatan data dari DB
+      if (summaryData.sessionToken && restaurant?.id) {
+        localStorage.setItem(`closed_session_token_${restaurant.id}`, summaryData.sessionToken);
       }
       
-      // Clear session state
-      localStorage.removeItem('session_token');
+      // Clear session state untuk toko ini
+      if (tokenKey) localStorage.removeItem(tokenKey);
       setSession(null);
       setSessionOrders([]);
       setSessionTotal(0);
@@ -152,12 +187,12 @@ export const SessionProvider = ({ children }) => {
   };
 
   const refreshSession = async () => {
-    const token = localStorage.getItem('session_token');
-    if (token) await loadSessionData(token);
+    const token = tokenKey ? localStorage.getItem(tokenKey) : null;
+    if (token && restaurant?.id) await loadSessionData(token, restaurant.id);
   };
 
   const updateCustomerData = async (customerData) => {
-    const token = localStorage.getItem('session_token');
+    const token = tokenKey ? localStorage.getItem(tokenKey) : null;
     if (!token) return;
     
     try {
@@ -165,7 +200,7 @@ export const SessionProvider = ({ children }) => {
       // Update local state
       setCustomerData(customerData);
       // Refresh session data
-      await loadSessionData(token);
+      if (restaurant?.id) await loadSessionData(token, restaurant.id);
     } catch (error) {
       console.error('Error updating customer data:', error);
     }

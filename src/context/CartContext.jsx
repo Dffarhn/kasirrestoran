@@ -16,18 +16,32 @@ export const CartProvider = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { restaurant } = useRestaurant();
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('restaurant_cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
-  }, []);
+  // Key cart per toko agar buka 2 toko bersamaan tidak campur
+  const cartStorageKey = restaurant?.id ? `restaurant_cart_${restaurant.id}` : null;
 
-  // Save cart to localStorage whenever cart changes
+  // Load cart untuk toko yang aktif (saat ganti toko, load cart toko tersebut)
   useEffect(() => {
-    localStorage.setItem('restaurant_cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (!cartStorageKey) {
+      setCartItems([]);
+      return;
+    }
+    const savedCart = localStorage.getItem(cartStorageKey);
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch {
+        setCartItems([]);
+      }
+    } else {
+      setCartItems([]);
+    }
+  }, [cartStorageKey]);
+
+  // Save cart ke localStorage per toko
+  useEffect(() => {
+    if (!cartStorageKey) return;
+    localStorage.setItem(cartStorageKey, JSON.stringify(cartItems));
+  }, [cartItems, cartStorageKey]);
 
   const addToCart = (item, selectedVariasi = null) => {
     setCartItems(prevItems => {
@@ -100,7 +114,7 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = () => {
     setCartItems([]);
-    localStorage.removeItem('restaurant_cart');
+    if (cartStorageKey) localStorage.removeItem(cartStorageKey);
   };
 
   const getTotalItems = () => {

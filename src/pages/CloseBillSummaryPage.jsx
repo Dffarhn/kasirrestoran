@@ -19,9 +19,10 @@ const CloseBillSummaryPage = () => {
   useEffect(() => {
     const loadFromRpc = async () => {
       try {
-        // Ambil token dari state -> localStorage -> context
+        // Ambil token dari state -> localStorage (per toko) -> context
         const tokenFromState = location.state?.summaryData?.sessionToken;
-        const tokenFromStorage = localStorage.getItem('closed_session_token');
+        const closedTokenKey = restaurant?.id ? `closed_session_token_${restaurant.id}` : null;
+        const tokenFromStorage = closedTokenKey ? localStorage.getItem(closedTokenKey) : null;
         const tokenFromContext = session?.session_token;
         const sessionToken = tokenFromState || tokenFromStorage || tokenFromContext;
         
@@ -90,15 +91,15 @@ const CloseBillSummaryPage = () => {
           setSummaryData(location.state.summaryData);
         }
       } finally {
-        // Bersihkan penyimpanan sementara
-        localStorage.removeItem('closed_session_token');
+        // Bersihkan penyimpanan sementara (per toko)
+        if (restaurant?.id) localStorage.removeItem(`closed_session_token_${restaurant.id}`);
         localStorage.removeItem('close_bill_summary');
       }
     };
 
-    loadFromRpc();
+    if (restaurant?.id) loadFromRpc();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [restaurant?.id]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
@@ -126,10 +127,13 @@ const CloseBillSummaryPage = () => {
   const handleConfirmSelesai = async () => {
     try {
       setIsProcessing(true);
-      // Clear semua data session
-      localStorage.removeItem('session_token');
+      // Clear data session & cart untuk toko ini
+      if (restaurant?.id) {
+        localStorage.removeItem(`session_token_${restaurant.id}`);
+        localStorage.removeItem(`closed_session_token_${restaurant.id}`);
+        localStorage.removeItem(`restaurant_cart_${restaurant.id}`);
+      }
       localStorage.removeItem('close_bill_summary');
-      localStorage.removeItem('restaurant_cart');
       
       // Tutup tab/window
       window.close();
@@ -145,8 +149,11 @@ const CloseBillSummaryPage = () => {
   };
 
   const handlePesanLagi = () => {
-    // Clear session dan redirect ke menu
-    localStorage.removeItem('session_token');
+    // Clear session toko ini dan redirect ke menu
+    if (restaurant?.id) {
+      localStorage.removeItem(`session_token_${restaurant.id}`);
+      localStorage.removeItem(`closed_session_token_${restaurant.id}`);
+    }
     localStorage.removeItem('close_bill_summary');
     navigate(safeBuildUrl('/'));
   };

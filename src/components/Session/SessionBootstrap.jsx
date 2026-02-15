@@ -9,8 +9,9 @@ const SessionBootstrap = () => {
   useEffect(() => {
     const init = async () => {
       if (!restaurant?.id || !tableNumber) return;
-      const token = localStorage.getItem('session_token');
-      if (token || session) return; // sudah ada session
+      const tokenKey = `session_token_${restaurant.id}`;
+      const token = localStorage.getItem(tokenKey);
+      if (token || session) return; // sudah ada session untuk toko ini
 
       // Coba join session aktif berdasarkan toko + meja
       const joined = await joinExistingSession(restaurant.id, tableNumber);
