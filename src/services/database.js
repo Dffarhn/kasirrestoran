@@ -4,42 +4,14 @@ import { normalizePhoneNumber, normalizePhoneForSearch } from '../utils/phoneNor
 // Database service layer untuk semua operasi database
 
 /**
- * Helper function untuk mengambil admin fee dari admin_settings
- * (digunakan sebagai fallback atau ketika admin_price_special = false)
- * Membaca langsung dari tabel admin_settings, bukan dari RPC
- */
-const getAdminFeeFromSettings = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('admin_settings')
-      .select('setting_value')
-      .eq('setting_key', 'admin_fee')
-      .single()
-
-    if (error) {
-      console.error('Error fetching admin fee from settings:', error)
-      return 1000 // Fallback to default
-    }
-
-    const adminFee = parseInt(data?.setting_value) || 1000
-    return adminFee
-  } catch (error) {
-    console.error('Error in getAdminFeeFromSettings:', error)
-    return 1000 // Fallback to default
-  }
-}
-
-/**
- * Get admin fee from database settings
- * Menggunakan logika yang sama dengan aplikasi kasir:
- * - Jika toko.admin_price_special = true → gunakan toko.biaya_admin
- * - Jika toko.admin_price_special = false → gunakan admin_settings.admin_fee
- * 
- * Mencoba menggunakan fungsi database get_admin_fee_for_toko terlebih dahulu (RECOMMENDED),
- * jika tidak tersedia, menggunakan implementasi manual.
- * 
+ * Get effective admin fee untuk aplikasi pemesanan online.
+ * Konsisten dengan flow checkout pesanan online di aplikasi kasir:
+ * - Sumber: tabel toko, kolom biaya_admin dan admin_fee_enabled.
+ * - effective_admin_fee = admin_fee_enabled ? biaya_admin : 0
+ * - Default jika kolom tidak ada: admin_fee_enabled = true, biaya_admin = 1000.
+ *
  * @param {string} tokoId - ID toko (required)
- * @returns {Promise<number>} Admin fee dalam rupiah (integer)
+ * @returns {Promise<number>} Biaya admin yang dikenakan (rupiah, integer), 0 jika disabled
  */
 export const getAdminFee = async (tokoId) => {
   try {
@@ -48,54 +20,28 @@ export const getAdminFee = async (tokoId) => {
       return 1000
     }
 
-    // Method 1: Coba gunakan fungsi database get_admin_fee_for_toko (RECOMMENDED)
-    try {
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('get_admin_fee_for_toko', { toko_uuid: tokoId })
-
-      if (!rpcError && rpcData !== null && rpcData !== undefined) {
-        const adminFee = parseInt(rpcData) || 1000
-        console.log('✅ Admin fee dari get_admin_fee_for_toko:', adminFee)
-        return adminFee
-      }
-    } catch (rpcError) {
-      // Jika RPC tidak tersedia, lanjut ke method manual
-      console.log('⚠️ Fungsi get_admin_fee_for_toko tidak tersedia, menggunakan method manual')
-    }
-
-    // Method 2: Implementasi manual (jika fungsi database tidak tersedia)
-    // 1. Ambil data toko untuk cek admin_price_special dan biaya_admin
     const { data: tokoData, error: tokoError } = await supabase
       .from('toko')
-      .select('biaya_admin, admin_price_special')
+      .select('biaya_admin, admin_fee_enabled')
       .eq('id', tokoId)
       .single()
 
     if (tokoError) {
-      console.error('Error fetching toko data:', tokoError)
-      // Fallback ke admin_settings jika error mengambil data toko
-      return await getAdminFeeFromSettings()
+      console.error('Error fetching toko data for admin fee:', tokoError)
+      return 1000
     }
 
-    const useSpecialPrice = tokoData?.admin_price_special ?? false
-
-    if (useSpecialPrice) {
-      // Gunakan biaya admin dari tabel toko
-      const tokoAdminFee = tokoData?.biaya_admin
-      if (tokoAdminFee !== null && tokoAdminFee !== undefined) {
-        const adminFee = parseInt(tokoAdminFee) || 1000
-        console.log('✅ Admin fee dari toko.biaya_admin:', adminFee)
-        return adminFee
-      }
+    const adminFeeEnabled = tokoData?.admin_fee_enabled !== false
+    if (!adminFeeEnabled) {
+      return 0
     }
 
-    // Gunakan biaya admin dari admin_settings
-    const adminFee = await getAdminFeeFromSettings()
-    console.log('✅ Admin fee dari admin_settings:', adminFee)
-    return adminFee
+    const biayaAdmin = tokoData?.biaya_admin
+    const fee = biayaAdmin != null && biayaAdmin !== '' ? parseInt(biayaAdmin, 10) : 1000
+    return Number.isNaN(fee) ? 1000 : Math.max(0, fee)
   } catch (error) {
     console.error('Error in getAdminFee:', error)
-    return 1000 // Fallback to default
+    return 1000
   }
 }
 
@@ -322,6 +268,46 @@ export const fetchMenuByKategori = async (tokoId, kategoriId) => {
 }
 
 /**
+ * Kurangi stok menu secara atomik (hanya jika stock_enabled dan stok cukup).
+ * Untuk concurrency lebih aman, disarankan pakai RPC reduce_menu_stock di Supabase.
+ * @param {string} menuId - UUID menu
+ * @param {number} quantity - Jumlah yang akan dikurangi
+ * @returns {Promise<{ success: boolean }>} - success true bila satu baris ter-update
+ */
+export const reduceMenuStock = async (menuId, quantity) => {
+  try {
+    const { data: row, error: selectError } = await supabase
+      .from('menu')
+      .select('stock_quantity, stock_enabled')
+      .eq('id', menuId)
+      .single();
+
+    if (selectError || !row) {
+      return { success: false };
+    }
+    if (!row.stock_enabled || row.stock_quantity < quantity) {
+      return { success: false };
+    }
+
+    const newStock = Math.max(0, row.stock_quantity - quantity);
+    const { data: updated, error: updateError } = await supabase
+      .from('menu')
+      .update({ stock_quantity: newStock })
+      .eq('id', menuId)
+      .eq('stock_enabled', true)
+      .eq('stock_quantity', row.stock_quantity)
+      .select('id')
+      .maybeSingle();
+
+    const success = !updateError && updated != null;
+    return { success };
+  } catch (err) {
+    console.error('reduceMenuStock error:', err);
+    return { success: false };
+  }
+};
+
+/**
  * Fetch atau create pelanggan berdasarkan nomor HP
  */
 export const fetchOrCreatePelanggan = async (tokoId, nama, noHp) => {
@@ -470,7 +456,7 @@ export const submitOrder = async (orderData) => {
       user_id: orderData.userId, // Bisa null untuk anonymous
       total: orderData.total,
       subtotal: orderData.subtotal,
-      admin_fee: orderData.adminFee || 1000,
+      admin_fee: orderData.adminFee != null ? orderData.adminFee : 1000,
       nama_pembeli: orderData.customerInfo.name,
       no_hp_pembeli: normalizedPhone,
       pelanggan_id: orderData.pelangganId,
@@ -565,20 +551,28 @@ export const searchCustomerByPhone = async (phone, tokoId) => {
 };
 
 /**
+ * Agregasi qty per menu_id dari items pesanan
+ */
+const aggregateQuantityByMenuId = (items) => {
+  const byMenu = {};
+  items.forEach((item) => {
+    const id = item.menu_id;
+    byMenu[id] = (byMenu[id] || 0) + (item.quantity || 0);
+  });
+  return byMenu;
+};
+
+/**
  * Create pesanan online
  */
 export const createPesananOnline = async (orderData) => {
   try {
-    // Normalize phone number sebelum digunakan
     const normalizedPhone = normalizePhoneNumber(orderData.customerInfo.phone);
-    
     let customerId = null;
-    
-    // Jika customer ditemukan, gunakan ID-nya
+
     if (orderData.customerInfo.customerId) {
       customerId = orderData.customerInfo.customerId;
     } else {
-      // Jika customer baru, create atau update dengan nomor yang sudah dinormalisasi
       const customer = await fetchOrCreatePelanggan(
         orderData.tokoId,
         orderData.customerInfo.name,
@@ -587,10 +581,24 @@ export const createPesananOnline = async (orderData) => {
       customerId = customer.id;
     }
 
-    // Debug logging untuk session data
-    console.log('createPesananOnline - session_id:', orderData.session_id);
-    console.log('createPesananOnline - session_token:', orderData.session_token);
-    console.log('createPesananOnline - orderData keys:', Object.keys(orderData));
+    const qtyByMenu = aggregateQuantityByMenuId(orderData.items);
+    const menuIds = Object.keys(qtyByMenu);
+
+    // Validasi stok sebelum insert (opsional tapi disarankan)
+    if (menuIds.length > 0) {
+      const { data: menuRows, error: menuErr } = await supabase
+        .from('menu')
+        .select('id, stock_enabled, stock_quantity')
+        .in('id', menuIds);
+
+      if (!menuErr && menuRows) {
+        for (const row of menuRows) {
+          if (row.stock_enabled && (row.stock_quantity == null || row.stock_quantity < (qtyByMenu[row.id] || 0))) {
+            throw new Error('Stok tidak mencukupi. Silakan periksa keranjang Anda.');
+          }
+        }
+      }
+    }
 
     // Create pesanan_online
     const { data: pesanan, error: pesananError } = await supabase
@@ -603,16 +611,14 @@ export const createPesananOnline = async (orderData) => {
         table_number: orderData.tableNumber,
         order_notes: orderData.orderNotes,
         total_amount: orderData.total,
-        subtotal: orderData.subtotal, // Subtotal SEBELUM global discount
-        admin_fee: orderData.adminFee,
+        subtotal: orderData.subtotal,
+        admin_fee: orderData.adminFee != null ? orderData.adminFee : 1000,
         is_anonymous: false,
         customer_type: 'online',
         status: 'pending',
         pelanggan_id: customerId,
-        // Session fields
         session_id: orderData.session_id || null,
         session_token: orderData.session_token || null,
-        // Global discount fields
         global_discount_amount: orderData.globalDiscountAmount || 0,
         global_discount_percentage: orderData.globalDiscountPercentage || 0
       })
@@ -621,7 +627,6 @@ export const createPesananOnline = async (orderData) => {
 
     if (pesananError) throw pesananError;
 
-    // Create pesanan_online_detail
     const details = orderData.items.map(item => ({
       pesanan_online_id: pesanan.id,
       menu_id: item.menu_id,
@@ -643,7 +648,18 @@ export const createPesananOnline = async (orderData) => {
 
     if (detailError) throw detailError;
 
-    // 🆕 KIRIM NOTIFIKASI SETELAH PESANAN BERHASIL DIBUAT
+    // Kurangi stok per menu (hanya yang stock_enabled)
+    for (const [menuId, qty] of Object.entries(qtyByMenu)) {
+      if (qty <= 0) continue;
+      const { success } = await reduceMenuStock(menuId, qty);
+      if (!success) {
+        await supabase.from('pesanan_online_detail').delete().eq('pesanan_online_id', pesanan.id);
+        await supabase.from('pesanan_online').delete().eq('id', pesanan.id);
+        throw new Error('Stok tidak mencukupi untuk salah satu menu. Pesanan dibatalkan.');
+      }
+    }
+
+    // KIRIM NOTIFIKASI SETELAH PESANAN BERHASIL DIBUAT
     try {
       await sendOrderNotification({
         order_id: pesanan.id,
@@ -753,7 +769,7 @@ export const createKitchenQueueFromPesanan = async (pesananId, orderData) => {
         status: 'pending',
         total_amount: orderData.total,
         subtotal: orderData.subtotal,
-        admin_fee: orderData.adminFee || 1000
+        admin_fee: orderData.adminFee != null ? orderData.adminFee : 1000
       })
       .select()
       .single();

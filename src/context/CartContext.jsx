@@ -43,56 +43,75 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem(cartStorageKey, JSON.stringify(cartItems));
   }, [cartItems, cartStorageKey]);
 
+  /** Total qty di keranjang untuk satu menu_id (semua variasi digabung) */
+  const getTotalQtyInCartForMenu = (menuId) => {
+    return cartItems
+      .filter((i) => i.id === menuId)
+      .reduce((sum, i) => sum + i.quantity, 0);
+  };
+
+  /** Maksimal qty yang masih boleh dipesan untuk menu ini (sisa stok minus yang sudah di cart) */
+  const getMaxQuantityForMenu = (menuId) => {
+    const menu = restaurant?.menu?.find((m) => m.id === menuId);
+    if (!menu) return null;
+    if (!menu.stock_enabled) return null; // unlimited
+    const inCart = getTotalQtyInCartForMenu(menuId);
+    return Math.max(0, menu.stock_quantity - inCart);
+  };
+
   const addToCart = (item, selectedVariasi = null) => {
+    const menu = restaurant?.menu?.find((m) => m.id === item.id) ?? item;
+    if (menu.stock_enabled) {
+      if (menu.stock_quantity <= 0) {
+        return { success: false, errorMessage: 'Stok habis.' };
+      }
+      const totalInCart = getTotalQtyInCartForMenu(item.id);
+      if (totalInCart + 1 > menu.stock_quantity) {
+        return {
+          success: false,
+          errorMessage: `Stok ${item.name} hanya tersedia ${menu.stock_quantity} unit.`
+        };
+      }
+    }
+
     setCartItems(prevItems => {
-      // Create unique cart item ID berdasarkan menu ID dan variasi ID
       const cartItemId = selectedVariasi ? `${item.id}-${selectedVariasi.id}` : item.id;
-      
       const existingItem = prevItems.find(cartItem => cartItem.cartItemId === cartItemId);
-      
+
       if (existingItem) {
         return prevItems.map(cartItem =>
           cartItem.cartItemId === cartItemId
             ? { ...cartItem, quantity: cartItem.quantity + 1 }
             : cartItem
         );
-      } else {
-        // Calculate total price including variasi
-        const variasiPrice = selectedVariasi ? selectedVariasi.harga_tambahan : 0;
-        const totalPrice = item.price + variasiPrice;
-        
-        // Calculate discount
-        const discountPercentage = item.discount_percentage || 0;
-        const discountAmount = Math.round((totalPrice * discountPercentage) / 100);
-        const finalPrice = totalPrice - discountAmount;
-
-        const newCartItem = {
-          cartItemId, // Unique ID untuk cart item
-          id: item.id, // Menu ID
-          name: item.name,
-          price: item.price, // Base price
-          totalPrice: finalPrice, // Price including variasi and discount
-          originalPrice: totalPrice, // Price before discount
-          discountPercentage,
-          discountAmount,
-          quantity: 1,
-          variasi_id: selectedVariasi ? selectedVariasi.id : null,
-          variasi_name: selectedVariasi ? selectedVariasi.nama : null,
-          variasi_price: variasiPrice,
-          image: item.image,
-          category: item.category
-        };
-
-        // Debug logging untuk image
-        console.log('Adding to cart:', {
-          itemName: item.name,
-          itemImage: item.image,
-          cartItemImage: newCartItem.image
-        });
-        
-        return [...prevItems, newCartItem];
       }
+
+      const variasiPrice = selectedVariasi ? selectedVariasi.harga_tambahan : 0;
+      const totalPrice = item.price + variasiPrice;
+      const discountPercentage = item.discount_percentage || 0;
+      const discountAmount = Math.round((totalPrice * discountPercentage) / 100);
+      const finalPrice = totalPrice - discountAmount;
+
+      const newCartItem = {
+        cartItemId,
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        totalPrice: finalPrice,
+        originalPrice: totalPrice,
+        discountPercentage,
+        discountAmount,
+        quantity: 1,
+        variasi_id: selectedVariasi ? selectedVariasi.id : null,
+        variasi_name: selectedVariasi ? selectedVariasi.nama : null,
+        variasi_price: variasiPrice,
+        image: item.image,
+        category: item.category
+      };
+
+      return [...prevItems, newCartItem];
     });
+    return { success: true };
   };
 
   const removeFromCart = (cartItemId) => {
@@ -102,7 +121,22 @@ export const CartProvider = ({ children }) => {
   const updateQuantity = (cartItemId, quantity) => {
     if (quantity <= 0) {
       removeFromCart(cartItemId);
-      return;
+      return { success: true };
+    }
+
+    const cartItem = cartItems.find((i) => i.cartItemId === cartItemId);
+    if (!cartItem) return { success: false, errorMessage: 'Item tidak ditemukan.' };
+
+    const menu = restaurant?.menu?.find((m) => m.id === cartItem.id);
+    if (menu?.stock_enabled) {
+      const totalInCart = getTotalQtyInCartForMenu(cartItem.id);
+      const newTotalForMenu = totalInCart - cartItem.quantity + quantity;
+      if (newTotalForMenu > menu.stock_quantity) {
+        return {
+          success: false,
+          errorMessage: `Stok ${cartItem.name} hanya tersedia ${menu.stock_quantity} unit.`
+        };
+      }
     }
 
     setCartItems(prevItems =>
@@ -110,6 +144,7 @@ export const CartProvider = ({ children }) => {
         item.cartItemId === cartItemId ? { ...item, quantity } : item
       )
     );
+    return { success: true };
   };
 
   const clearCart = () => {
@@ -163,6 +198,8 @@ export const CartProvider = ({ children }) => {
     clearCart,
     getTotalItems,
     getTotalPrice,
+    getTotalQtyInCartForMenu,
+    getMaxQuantityForMenu,
     getGlobalDiscountAmount,
     getTotalPriceWithGlobalDiscount,
     getGlobalDiscountInfo,

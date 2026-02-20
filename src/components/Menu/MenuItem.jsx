@@ -20,11 +20,12 @@ const MenuItem = ({ item }) => {
   const handleAddToCart = () => {
     if (item.available) {
       if (item.variasi && item.variasi.length > 0) {
-        // Show variasi selector jika ada variasi
         setShowVariasiSelector(true);
       } else {
-        // Add langsung jika tidak ada variasi
-        addToCart(item, null);
+        const result = addToCart(item, null);
+        if (!result.success) {
+          alert(result.errorMessage);
+        }
       }
     }
   };
@@ -35,7 +36,11 @@ const MenuItem = ({ item }) => {
   };
 
   const handleConfirmAddToCart = () => {
-    addToCart(item, selectedVariasi);
+    const result = addToCart(item, selectedVariasi);
+    if (!result.success) {
+      alert(result.errorMessage);
+      return;
+    }
     setShowVariasiSelector(false);
   };
 
@@ -57,8 +62,8 @@ const MenuItem = ({ item }) => {
   const displayPrice = basePrice - discountAmount;
 
 
-  // Get menu image URL
   const menuImageUrl = getMenuImageUrl(item);
+  const isLowStock = item.stock_enabled && item.stock_quantity > 0 && item.stock_quantity <= (item.stock_alert_threshold ?? 5);
 
   return (
     <>
@@ -95,6 +100,15 @@ const MenuItem = ({ item }) => {
             <div className="absolute top-2 right-2">
               <span className="bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg">
                 -{discountPercentage}%
+              </span>
+            </div>
+          )}
+
+          {/* Stok rendah badge */}
+          {isLowStock && (
+            <div className="absolute bottom-2 left-2">
+              <span className="bg-amber-500/90 text-[#0D0D0D] px-2 py-1 rounded-full text-xs font-medium shadow-lg">
+                Stok rendah ({item.stock_quantity})
               </span>
             </div>
           )}
@@ -171,6 +185,14 @@ const MenuItem = ({ item }) => {
               <div className="absolute top-3 right-3">
                 <span className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg">
                   -{discountPercentage}%
+                </span>
+              </div>
+            )}
+            {/* Stok rendah badge - Desktop */}
+            {isLowStock && (
+              <div className="absolute bottom-3 left-3">
+                <span className="bg-amber-500/90 text-[#0D0D0D] px-3 py-1.5 rounded-full text-xs font-medium shadow-lg">
+                  Stok rendah ({item.stock_quantity})
                 </span>
               </div>
             )}

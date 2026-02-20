@@ -80,22 +80,29 @@ export const RestaurantProvider = ({ children }) => {
             name: kategori.nama,
             icon: "🍽️" // Default icon, bisa diupdate sesuai kebutuhan
           })),
-          // Transform menu data dengan variasi
-          menu: menuData.map(menu => ({
-            id: menu.id,
-            name: menu.nama,
-            price: menu.harga,
-            image: getMenuImageUrl(menu), // Menggunakan fungsi getMenuImageUrl untuk image
-            category: menu.kategori_id,
-            category_name: menu.kategori_nama,
-            available: true, // Default available
-            variasi: menu.variasi || [], // Array variasi dari database
-            // Tambahkan field image untuk kompatibilitas
-            image_url: menu.image_url,
-            image_path: menu.image_path,
-            // Tambahkan field discount
-            discount_percentage: menu.discount_percentage || 0
-          }))
+          // Transform menu data dengan variasi + stok
+          menu: menuData.map(menu => {
+            const stockEnabled = menu.stock_enabled === true;
+            const stockQuantity = typeof menu.stock_quantity === 'number' ? menu.stock_quantity : 0;
+            const stockAlertThreshold = typeof menu.stock_alert_threshold === 'number' ? menu.stock_alert_threshold : 5;
+            const available = stockEnabled ? stockQuantity > 0 : true;
+            return {
+              id: menu.id,
+              name: menu.nama,
+              price: menu.harga,
+              image: getMenuImageUrl(menu),
+              category: menu.kategori_id,
+              category_name: menu.kategori_nama,
+              available,
+              stock_enabled: stockEnabled,
+              stock_quantity: stockQuantity,
+              stock_alert_threshold: stockAlertThreshold,
+              variasi: menu.variasi || [],
+              image_url: menu.image_url,
+              image_path: menu.image_path,
+              discount_percentage: menu.discount_percentage || 0
+            };
+          })
         };
 
         console.log('Restaurant Data:', restaurantData);
@@ -132,10 +139,13 @@ export const RestaurantProvider = ({ children }) => {
               image: "/DefaultMenu.png",
               category: 1,
               available: true,
+              stock_enabled: false,
+              stock_quantity: 0,
+              stock_alert_threshold: 5,
               variasi: [],
               image_url: null,
               image_path: null,
-              discount_percentage: 20 // Test discount 20%
+              discount_percentage: 20
             },
             {
               id: 2,
@@ -144,10 +154,13 @@ export const RestaurantProvider = ({ children }) => {
               image: "/DefaultMenu.png",
               category: 1,
               available: true,
+              stock_enabled: false,
+              stock_quantity: 0,
+              stock_alert_threshold: 5,
               variasi: [],
               image_url: null,
               image_path: null,
-              discount_percentage: 15 // Test discount 15%
+              discount_percentage: 15
             },
             {
               id: 3,
@@ -156,10 +169,13 @@ export const RestaurantProvider = ({ children }) => {
               image: "/DefaultMenu.png",
               category: 2,
               available: true,
+              stock_enabled: false,
+              stock_quantity: 0,
+              stock_alert_threshold: 5,
               variasi: [],
               image_url: null,
               image_path: null,
-              discount_percentage: 0 // No discount
+              discount_percentage: 0
             }
           ]
         };

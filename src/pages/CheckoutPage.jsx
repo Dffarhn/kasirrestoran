@@ -133,8 +133,15 @@ const CheckoutPage = () => {
       });
     } catch (error) {
       console.error('Error submitting order:', error);
-      // Show error message - bisa ditambahkan toast notification
-      alert('Terjadi kesalahan saat mengirim pesanan. Silakan coba lagi.');
+      const isStockError = error?.message && (
+        error.message.includes('Stok tidak mencukupi') ||
+        error.message.includes('Pesanan dibatalkan')
+      );
+      if (isStockError) {
+        alert('Stok tidak mencukupi. Silakan periksa keranjang Anda.');
+      } else {
+        alert('Terjadi kesalahan saat mengirim pesanan. Silakan coba lagi.');
+      }
     } finally {
       setIsSubmitting(false);
     }

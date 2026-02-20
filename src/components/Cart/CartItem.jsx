@@ -2,14 +2,10 @@ import React from 'react';
 import { useCart } from '../../context/CartContext';
 
 const CartItem = ({ item }) => {
-  const { updateQuantity, removeFromCart } = useCart();
+  const { updateQuantity, removeFromCart, getMaxQuantityForMenu } = useCart();
 
-  // Debug logging untuk image
-  console.log('CartItem Debug:', {
-    itemName: item.name,
-    itemImage: item.image,
-    item: item
-  });
+  const maxRemaining = getMaxQuantityForMenu(item.id);
+  const canIncrease = maxRemaining === null || maxRemaining > 0;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
@@ -20,7 +16,10 @@ const CartItem = ({ item }) => {
   };
 
   const handleQuantityChange = (newQuantity) => {
-    updateQuantity(item.cartItemId, newQuantity);
+    const result = updateQuantity(item.cartItemId, newQuantity);
+    if (!result.success) {
+      alert(result.errorMessage);
+    }
   };
 
   const handleRemove = () => {
@@ -78,8 +77,13 @@ const CartItem = ({ item }) => {
             <span className="w-8 text-center font-medium text-sm text-[#FFFFFF]">{item.quantity}</span>
             
             <button
-              onClick={() => handleQuantityChange(item.quantity + 1)}
-              className="w-8 h-8 rounded-full bg-[#333333] border border-[#555555] flex items-center justify-center hover:bg-[#FFD700]/10 hover:border-[#FFD700] transition-colors active:bg-[#FFD700]/20"
+              onClick={() => canIncrease && handleQuantityChange(item.quantity + 1)}
+              disabled={!canIncrease}
+              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                canIncrease
+                  ? 'bg-[#333333] border-[#555555] hover:bg-[#FFD700]/10 hover:border-[#FFD700] active:bg-[#FFD700]/20'
+                  : 'bg-[#333333] border-[#555555] opacity-50 cursor-not-allowed'
+              }`}
             >
               <span className="text-[#FFFFFF] text-sm font-semibold">+</span>
             </button>

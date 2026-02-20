@@ -15,7 +15,7 @@ const CartSummary = () => {
     getGlobalDiscountInfo 
   } = useCart();
   const { restaurant } = useRestaurant();
-  const [adminFee, setAdminFee] = useState(1000); // Default fallback
+  const [adminFee, setAdminFee] = useState(0);
 
   useEffect(() => {
     const fetchAdminFee = async () => {
@@ -26,7 +26,7 @@ const CartSummary = () => {
         setAdminFee(fee);
       } catch (error) {
         console.error('Error fetching admin fee:', error);
-        setAdminFee(1000); // Fallback to default
+        setAdminFee(0);
       }
     };
 
@@ -97,11 +97,13 @@ const CartSummary = () => {
           </div>
         )}
         
-        <div className="flex justify-between text-sm">
-          <span className="text-[#B3B3B3]">Biaya Aplikasi:</span>
-          <span className="font-medium text-[#FFFFFF]">{formatPrice(adminFee)}</span>
-        </div>
-        
+        {adminFee > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-[#B3B3B3]">Biaya Aplikasi:</span>
+            <span className="font-medium text-[#FFFFFF]">{formatPrice(adminFee)}</span>
+          </div>
+        )}
+
         <div className="border-t border-[#333333] pt-2">
           <div className="flex justify-between text-base font-semibold">
             <span className="text-[#FFFFFF]">Total Harga:</span>
