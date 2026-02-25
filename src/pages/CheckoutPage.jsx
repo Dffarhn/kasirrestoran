@@ -150,7 +150,7 @@ const CheckoutPage = () => {
   if (cartItems.length === 0) {
     // Gunakan useEffect untuk navigasi, bukan langsung di render
     React.useEffect(() => {
-      navigate('/');
+      safeNavigate(navigate, '/');
     }, [navigate]);
     return null;
   }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useCart } from '../../context/CartContext';
 import { useSession } from '../../context/SessionContext';
@@ -8,6 +8,7 @@ import { safeBuildUrl } from '../../utils/safeNavigation';
 import { checkKitchenModeEnabled } from '../../services/database';
 
 const Header = () => {
+  const { pathname } = useLocation();
   const { restaurant, tableNumber, loading } = useRestaurant();
   const { getTotalItems } = useCart();
   const { session, sessionOrders, sessionTotal } = useSession();
@@ -31,6 +32,11 @@ const Header = () => {
 
     checkKitchenMode();
   }, [restaurant?.id]);
+
+  // Sembunyikan header di halaman portal direktori (path root "/")
+  if (pathname === '/') {
+    return null;
+  }
 
   if (loading) {
     return (

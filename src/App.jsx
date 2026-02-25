@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Header from './components/Layout/Header';
 import MenuPage from './pages/MenuPage';
 import CartPage from './pages/CartPage';
@@ -14,6 +14,7 @@ import { SessionProvider } from './context/SessionContext';
 import SessionHistory from './components/Session/SessionHistory';
 import SessionBootstrap from './components/Session/SessionBootstrap';
 import CloseBillSummaryPage from './pages/CloseBillSummaryPage';
+import PortalPage from './pages/PortalPage';
 
 // Scroll to top component
 const ScrollToTop = () => {
@@ -31,6 +32,29 @@ const ScrollToTop = () => {
   return null;
 };
 
+// Root route handler:
+// - Jika ada toko_id di query → redirect ke /default/pesan dengan parameter yang sama (kompatibel dengan URL lama)
+// - Jika tidak ada → tampilkan PortalPage (portal resto)
+const RootRoute = () => {
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
+
+  const tokoId = searchParams.get('toko_id') || searchParams.get('restaurant_id');
+  const table = searchParams.get('table') || searchParams.get('nomor_meja') || '1';
+
+  if (tokoId) {
+    const params = new URLSearchParams();
+    params.set('toko_id', tokoId);
+    if (table) {
+      params.set('table', table);
+    }
+
+    return <Navigate to={`/default/pesan?${params.toString()}`} replace />;
+  }
+
+  return <PortalPage />;
+};
+
 function App() {
   return (
     <RestaurantProvider>
@@ -43,14 +67,32 @@ function App() {
               <main className="pb-20">
                 <SessionBootstrap />
                 <Routes>
-                  <Route path="/" element={<MenuPage />} />
-                  <Route path="/cart" element={<CartPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="/confirmation" element={<OrderConfirmationPage />} />
-                  <Route path="/order-status" element={<OrderStatusPage />} />
-                  <Route path="/order-history" element={<OrderHistoryPage />} />
-                  <Route path="/session-history" element={<SessionHistory />} />
-                  <Route path="/close-bill-summary" element={<CloseBillSummaryPage />} />
+                  {/* Root wrapper: portal atau redirect dari URL lama */}
+                  <Route path="/" element={<RootRoute />} />
+
+                  {/* Grup default (tanpa slug / website khusus) */}
+                  <Route path="/default">
+                    <Route path="pesan" element={<MenuPage />} />
+                    <Route path="cart" element={<CartPage />} />
+                    <Route path="checkout" element={<CheckoutPage />} />
+                    <Route path="confirmation" element={<OrderConfirmationPage />} />
+                    <Route path="order-status" element={<OrderStatusPage />} />
+                    <Route path="order-history" element={<OrderHistoryPage />} />
+                    <Route path="session-history" element={<SessionHistory />} />
+                    <Route path="close-bill-summary" element={<CloseBillSummaryPage />} />
+                  </Route>
+
+                  {/* Grup dengan slug toko */}
+                  <Route path="/:slug">
+                    <Route path="pesan" element={<MenuPage />} />
+                    <Route path="cart" element={<CartPage />} />
+                    <Route path="checkout" element={<CheckoutPage />} />
+                    <Route path="confirmation" element={<OrderConfirmationPage />} />
+                    <Route path="order-status" element={<OrderStatusPage />} />
+                    <Route path="order-history" element={<OrderHistoryPage />} />
+                    <Route path="session-history" element={<SessionHistory />} />
+                    <Route path="close-bill-summary" element={<CloseBillSummaryPage />} />
+                  </Route>
                 </Routes>
               </main>
               <FloatingCartButton />
