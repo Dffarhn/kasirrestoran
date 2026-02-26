@@ -33,8 +33,9 @@ const Header = () => {
     checkKitchenMode();
   }, [restaurant?.id]);
 
-  // Sembunyikan header di halaman portal direktori (path root "/")
-  if (pathname === '/') {
+  // Sembunyikan header di portal (/) dan di halaman website toko (/{slug} saja, tanpa /pesan dll)
+  const segments = pathname.split('/').filter(Boolean);
+  if (pathname === '/' || segments.length === 1) {
     return null;
   }
 

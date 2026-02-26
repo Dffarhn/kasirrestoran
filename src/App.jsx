@@ -15,6 +15,7 @@ import SessionHistory from './components/Session/SessionHistory';
 import SessionBootstrap from './components/Session/SessionBootstrap';
 import CloseBillSummaryPage from './pages/CloseBillSummaryPage';
 import PortalPage from './pages/PortalPage';
+import TokoWebsitePage from './pages/TokoWebsitePage';
 
 // Scroll to top component
 const ScrollToTop = () => {
@@ -82,8 +83,9 @@ function App() {
                     <Route path="close-bill-summary" element={<CloseBillSummaryPage />} />
                   </Route>
 
-                  {/* Grup dengan slug toko */}
+                  {/* Grup dengan slug toko: index = website toko (template HTML full), pesan/cart hanya lewat QR */}
                   <Route path="/:slug">
+                    <Route index element={<TokoWebsitePage />} />
                     <Route path="pesan" element={<MenuPage />} />
                     <Route path="cart" element={<CartPage />} />
                     <Route path="checkout" element={<CheckoutPage />} />

@@ -63,14 +63,19 @@ CREATE TABLE public.customer_reminder_history (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   pelanggan_id uuid NOT NULL,
   toko_id uuid NOT NULL,
-  reminder_type text NOT NULL CHECK (reminder_type = ANY (ARRAY['inactive_2weeks'::text, 'birthday'::text, 'promo'::text])),
+  reminder_type text NOT NULL,
   message_content text NOT NULL,
   sent_at timestamp with time zone DEFAULT now(),
   status text NOT NULL DEFAULT 'sent'::text CHECK (status = ANY (ARRAY['sent'::text, 'delivered'::text, 'failed'::text])),
   created_at timestamp with time zone DEFAULT now(),
+  template_id uuid,
+  template_key text,
+  reminder_kind text,
+  days_inactive integer,
   CONSTRAINT customer_reminder_history_pkey PRIMARY KEY (id),
   CONSTRAINT customer_reminder_history_pelanggan_id_fkey FOREIGN KEY (pelanggan_id) REFERENCES public.pelanggan(id),
-  CONSTRAINT customer_reminder_history_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id)
+  CONSTRAINT customer_reminder_history_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id),
+  CONSTRAINT customer_reminder_history_template_fk FOREIGN KEY (template_id) REFERENCES public.reminder_message_templates(id)
 );
 CREATE TABLE public.customer_sessions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -178,7 +183,7 @@ CREATE TABLE public.flashsale_user (
 CREATE TABLE public.karyawan (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   created_at timestamp with time zone DEFAULT now(),
-  username text NOT NULL,
+  username text NOT NULL UNIQUE,
   password text NOT NULL,
   nama text NOT NULL,
   toko_id uuid NOT NULL,
@@ -270,6 +275,25 @@ CREATE TABLE public.license_notifications (
   is_read boolean DEFAULT false,
   CONSTRAINT license_notifications_pkey PRIMARY KEY (id),
   CONSTRAINT license_notifications_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id)
+);
+CREATE TABLE public.license_pricing (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  license_type character varying NOT NULL,
+  pricing_tier character varying NOT NULL,
+  price integer NOT NULL,
+  features jsonb DEFAULT '[]'::jsonb,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT license_pricing_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.marketing_wa_templates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  message text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT marketing_wa_templates_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.menu (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -417,9 +441,25 @@ CREATE TABLE public.pickup_codes (
   used_by_karyawan_id uuid,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT pickup_codes_pkey PRIMARY KEY (id),
-  CONSTRAINT pickup_codes_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.flashsale_orders(id),
   CONSTRAINT pickup_codes_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id),
-  CONSTRAINT pickup_codes_used_by_karyawan_id_fkey FOREIGN KEY (used_by_karyawan_id) REFERENCES public.karyawan(id)
+  CONSTRAINT pickup_codes_used_by_karyawan_id_fkey FOREIGN KEY (used_by_karyawan_id) REFERENCES public.karyawan(id),
+  CONSTRAINT pickup_codes_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.flashsale_orders(id)
+);
+CREATE TABLE public.places (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  phone text,
+  website text,
+  address text,
+  lat numeric CHECK (lat IS NULL OR lat >= '-90'::integer::numeric AND lat <= 90::numeric),
+  lng numeric CHECK (lng IS NULL OR lng >= '-180'::integer::numeric AND lng <= 180::numeric),
+  maps_url text,
+  wa_contacted boolean NOT NULL DEFAULT false,
+  wa_contacted_at timestamp with time zone,
+  wa_contacted_notes text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT places_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.profile (
   id uuid NOT NULL,
@@ -427,8 +467,124 @@ CREATE TABLE public.profile (
   nama text,
   toko_id uuid,
   CONSTRAINT profile_pkey PRIMARY KEY (id),
-  CONSTRAINT profile_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
-  CONSTRAINT profile_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id)
+  CONSTRAINT profile_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id),
+  CONSTRAINT profile_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.referral_codes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  referrer_type text NOT NULL CHECK (referrer_type = ANY (ARRAY['toko'::text, 'freelancer'::text])),
+  toko_id uuid,
+  freelancer_id uuid,
+  referral_code text NOT NULL UNIQUE,
+  is_active boolean NOT NULL DEFAULT true,
+  total_uses integer NOT NULL DEFAULT 0,
+  total_referrals integer NOT NULL DEFAULT 0,
+  total_earnings integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  expires_at timestamp with time zone,
+  CONSTRAINT referral_codes_pkey PRIMARY KEY (id),
+  CONSTRAINT referral_codes_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id),
+  CONSTRAINT referral_codes_freelancer_id_fkey FOREIGN KEY (freelancer_id) REFERENCES public.referral_freelancers(id)
+);
+CREATE TABLE public.referral_freelancers (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  nama text NOT NULL,
+  email text NOT NULL UNIQUE,
+  no_handphone text,
+  alamat text,
+  bank_name text,
+  bank_account_number text,
+  bank_account_name text,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'active'::text, 'suspended'::text, 'inactive'::text])),
+  total_earnings integer NOT NULL DEFAULT 0,
+  total_referrals integer NOT NULL DEFAULT 0,
+  verified_at timestamp with time zone,
+  verified_by uuid,
+  notes text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT referral_freelancers_pkey PRIMARY KEY (id),
+  CONSTRAINT referral_freelancers_verified_by_fkey FOREIGN KEY (verified_by) REFERENCES public.admin_mibebi_account(id)
+);
+CREATE TABLE public.referral_rewards (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  referral_usage_id uuid NOT NULL,
+  referrer_type text NOT NULL CHECK (referrer_type = ANY (ARRAY['toko'::text, 'freelancer'::text])),
+  referrer_toko_id uuid,
+  referrer_freelancer_id uuid,
+  referred_toko_id uuid NOT NULL,
+  reward_type text NOT NULL CHECK (reward_type = ANY (ARRAY['signup'::text, 'first_transaction'::text, 'recurring'::text, 'milestone'::text])),
+  amount integer NOT NULL,
+  percentage integer,
+  base_amount integer,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'paid'::text, 'cancelled'::text])),
+  transaction_id uuid,
+  transaction_amount integer,
+  notes text,
+  approved_by uuid,
+  approved_at timestamp with time zone,
+  paid_at timestamp with time zone,
+  payment_method text,
+  payment_reference text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT referral_rewards_pkey PRIMARY KEY (id),
+  CONSTRAINT referral_rewards_referral_usage_id_fkey FOREIGN KEY (referral_usage_id) REFERENCES public.referral_usage(id),
+  CONSTRAINT referral_rewards_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.transaksi(id),
+  CONSTRAINT referral_rewards_referrer_toko_id_fkey FOREIGN KEY (referrer_toko_id) REFERENCES public.toko(id),
+  CONSTRAINT referral_rewards_referrer_freelancer_id_fkey FOREIGN KEY (referrer_freelancer_id) REFERENCES public.referral_freelancers(id),
+  CONSTRAINT referral_rewards_referred_toko_id_fkey FOREIGN KEY (referred_toko_id) REFERENCES public.toko(id)
+);
+CREATE TABLE public.referral_settings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  setting_key text NOT NULL UNIQUE,
+  setting_value jsonb NOT NULL,
+  description text,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT referral_settings_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.referral_usage (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  referral_code_id uuid NOT NULL,
+  referrer_type text NOT NULL CHECK (referrer_type = ANY (ARRAY['toko'::text, 'freelancer'::text])),
+  referrer_toko_id uuid,
+  referrer_freelancer_id uuid,
+  referred_toko_id uuid NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'active'::text, 'completed'::text, 'cancelled'::text])),
+  first_transaction_id uuid,
+  first_transaction_at timestamp with time zone,
+  qualification_met_at timestamp with time zone,
+  qualification_criteria jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT referral_usage_pkey PRIMARY KEY (id),
+  CONSTRAINT referral_usage_referral_code_id_fkey FOREIGN KEY (referral_code_id) REFERENCES public.referral_codes(id),
+  CONSTRAINT referral_usage_referred_toko_id_fkey FOREIGN KEY (referred_toko_id) REFERENCES public.toko(id),
+  CONSTRAINT referral_usage_referrer_toko_id_fkey FOREIGN KEY (referrer_toko_id) REFERENCES public.toko(id),
+  CONSTRAINT referral_usage_referrer_freelancer_id_fkey FOREIGN KEY (referrer_freelancer_id) REFERENCES public.referral_freelancers(id)
+);
+CREATE TABLE public.reminder_message_templates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  template_key text NOT NULL,
+  name text NOT NULL,
+  message text NOT NULL,
+  channel text NOT NULL DEFAULT 'whatsapp'::text CHECK (channel = 'whatsapp'::text),
+  category text NOT NULL DEFAULT 'inactive'::text CHECK (category = 'inactive'::text),
+  kind text NOT NULL CHECK (kind = ANY (ARRAY['voucher'::text, 'h1'::text, 'h7'::text, 'h30'::text])),
+  min_days integer,
+  max_days_exclusive integer,
+  allow_voucher boolean NOT NULL DEFAULT false,
+  is_active boolean NOT NULL DEFAULT true,
+  scope text NOT NULL DEFAULT 'global'::text CHECK (scope = ANY (ARRAY['global'::text, 'toko'::text])),
+  toko_id uuid,
+  variables jsonb NOT NULL DEFAULT '[]'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT reminder_message_templates_pkey PRIMARY KEY (id),
+  CONSTRAINT reminder_message_templates_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id)
 );
 CREATE TABLE public.toko (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -454,6 +610,24 @@ CREATE TABLE public.toko (
   revenue_share_percentage integer DEFAULT 50,
   revenue_share_enabled boolean DEFAULT true,
   kitchen_mode_enabled boolean DEFAULT false,
+  trial_start_date timestamp with time zone DEFAULT now(),
+  trial_end_date timestamp with time zone DEFAULT (now() + '1 mon'::interval),
+  is_trial_active boolean DEFAULT true,
+  trial_features_unlocked boolean DEFAULT true,
+  license_payment_model character varying DEFAULT 'trial'::character varying,
+  license_pricing_tier character varying DEFAULT 'basic'::character varying,
+  license_payment_status character varying DEFAULT 'unpaid'::character varying,
+  admin_fee_configurable boolean DEFAULT true,
+  min_admin_fee integer DEFAULT 500,
+  admin_fee_enabled boolean DEFAULT true,
+  full_access_enabled boolean DEFAULT false,
+  full_access_start_date timestamp with time zone,
+  full_access_end_date timestamp with time zone,
+  allowed_features jsonb DEFAULT '["basic_kasir"]'::jsonb,
+  feature_restrictions jsonb DEFAULT '{}'::jsonb,
+  whatsapp_custom_message text,
+  tax_enabled boolean NOT NULL DEFAULT false,
+  tax_percentage integer NOT NULL DEFAULT 11 CHECK (tax_percentage = ANY (ARRAY[10, 11])),
   CONSTRAINT toko_pkey PRIMARY KEY (id),
   CONSTRAINT toko_reminder_voucher_id_fkey FOREIGN KEY (reminder_voucher_id) REFERENCES public.voucher(id)
 );
@@ -469,6 +643,38 @@ CREATE TABLE public.toko_admin_fee_audit (
   change_reason text,
   CONSTRAINT toko_admin_fee_audit_pkey PRIMARY KEY (id),
   CONSTRAINT toko_admin_fee_audit_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id)
+);
+CREATE TABLE public.toko_reminder_settings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  toko_id uuid NOT NULL,
+  kind text NOT NULL CHECK (kind = ANY (ARRAY['voucher'::text, 'h1'::text, 'h7'::text, 'h30'::text])),
+  template_id uuid NOT NULL,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT toko_reminder_settings_pkey PRIMARY KEY (id),
+  CONSTRAINT toko_reminder_settings_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id),
+  CONSTRAINT toko_reminder_settings_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.reminder_message_templates(id)
+);
+CREATE TABLE public.toko_website_settings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  toko_id uuid NOT NULL UNIQUE,
+  template_id uuid NOT NULL,
+  slug text NOT NULL UNIQUE,
+  logo_url text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT toko_website_settings_pkey PRIMARY KEY (id),
+  CONSTRAINT toko_website_settings_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id),
+  CONSTRAINT toko_website_settings_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.toko_website_templates(id)
+);
+CREATE TABLE public.toko_website_templates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  code text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT toko_website_templates_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.transaksi (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -487,6 +693,10 @@ CREATE TABLE public.transaksi (
   order_type text DEFAULT 'walk_in'::text CHECK (order_type = ANY (ARRAY['walk_in'::text, 'online'::text])),
   global_discount_amount integer DEFAULT 0,
   global_discount_percentage integer DEFAULT 0,
+  payment_method USER-DEFINED NOT NULL DEFAULT 'tunai'::payment_method,
+  tax_enabled boolean NOT NULL DEFAULT false,
+  tax_percentage integer NOT NULL DEFAULT 0,
+  tax_amount integer NOT NULL DEFAULT 0,
   CONSTRAINT transaksi_pkey PRIMARY KEY (id),
   CONSTRAINT transaksi_toko_id_fkey FOREIGN KEY (toko_id) REFERENCES public.toko(id),
   CONSTRAINT transaksi_pelanggan_id_fkey FOREIGN KEY (pelanggan_id) REFERENCES public.pelanggan(id)

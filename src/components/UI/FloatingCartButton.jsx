@@ -1,11 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { ShoppingCart } from 'lucide-react';
 import { safeBuildUrl } from '../../utils/safeNavigation';
 
 const FloatingCartButton = () => {
+  const { pathname } = useLocation();
   const { getTotalItems, getTotalPrice } = useCart();
+
+  const segments = pathname.split('/').filter(Boolean);
+  if (pathname === '/' || segments.length === 1) return null;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
