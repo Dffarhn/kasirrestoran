@@ -4,8 +4,13 @@ import { supabase } from '../lib/supabase';
 import { fetchMenuWithVariasiAndImages, getMenuImageUrl } from '../services/database';
 
 /**
- * Halaman website toko: merender template HTML dari DB (full document) di iframe.
- * Preview 100% isolasi — hanya HTML + style dari template, tidak terpengaruh style project.
+ * Halaman website toko by slug: menampilkan HTML toko di iframe (full document, isolasi penuh).
+ *
+ * Sumber data: toko_website_settings (filter by slug).
+ * 1. Prioritas: jika kolom rendered_html terisi → pakai langsung (tanpa fetch template/menu).
+ * 2. Fallback: jika rendered_html null/kosong → fetch settings + toko + template + menu,
+ *    apply placeholders, lalu tampilkan (sama seperti dulu).
+ *
  * Tidak ada link/CTA ke "Pesan" — pemesanan hanya lewat QR code dari aplikasi kasir.
  */
 
@@ -123,11 +128,33 @@ const TokoWebsitePage = () => {
       return;
     }
 
-    const fetchTemplate = async () => {
+    const loadWebsite = async () => {
       try {
         setLoading(true);
         setError(null);
 
+        // 1. Coba ambil rendered_html dulu (pre-rendered di belakang layar)
+        const { data: settingsRow, error: settingsErr } = await supabase
+          .from('toko_website_settings')
+          .select('rendered_html, rendered_at')
+          .eq('slug', slug)
+          .maybeSingle();
+
+        if (settingsErr) {
+          console.error('Error fetching toko website:', settingsErr);
+          throw settingsErr;
+        }
+
+        const hasRenderedHtml =
+          settingsRow?.rendered_html != null && String(settingsRow.rendered_html).trim() !== '';
+
+        if (hasRenderedHtml) {
+          setHtmlCode(settingsRow.rendered_html);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Fallback: fetch settings + toko + template + menu, lalu render (replace placeholder)
         const { data, error: err } = await supabase
           .from('toko_website_settings')
           .select(`
@@ -167,7 +194,6 @@ const TokoWebsitePage = () => {
           return;
         }
 
-        // Fetch menu untuk toko ini
         let menu = [];
         if (data.toko?.id) {
           try {
@@ -195,7 +221,7 @@ const TokoWebsitePage = () => {
       }
     };
 
-    fetchTemplate();
+    loadWebsite();
   }, [slug, navigate]);
 
   if (slug === 'default') {
