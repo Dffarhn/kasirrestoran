@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useRestaurant } from '../context/RestaurantContext';
@@ -30,6 +30,7 @@ const CheckoutPage = () => {
   });
   const [orderNotes, setOrderNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
   // Auto-fill customer data dari session
   useEffect(() => {
@@ -44,6 +45,8 @@ const CheckoutPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitLockRef.current || isSubmitting) return;
+    submitLockRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -143,6 +146,7 @@ const CheckoutPage = () => {
         alert('Terjadi kesalahan saat mengirim pesanan. Silakan coba lagi.');
       }
     } finally {
+      submitLockRef.current = false;
       setIsSubmitting(false);
     }
   };
