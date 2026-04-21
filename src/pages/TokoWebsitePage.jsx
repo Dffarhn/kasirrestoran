@@ -79,9 +79,12 @@ const applyPlaceholders = ({ code, toko, settings, template, menu }) => {
 
   let rendered = code;
 
+  const rawWa = toko?.whatsapp_number ?? '';
+  const waNumber = rawWa.startsWith('0') ? '62' + rawWa.slice(1) : rawWa.replace(/^\+/, '');
+
   const placeholders = {
     nama_toko: toko?.nama_toko,
-    whatsapp: toko?.whatsapp_number,
+    whatsapp: waNumber,
     link_gmaps: toko?.gmaps_link,
     social_media: toko?.social_media,
     slug: settings?.slug,
@@ -105,6 +108,26 @@ const applyPlaceholders = ({ code, toko, settings, template, menu }) => {
     const pattern = new RegExp(`{{${key}}}`, 'g');
     rendered = rendered.replace(pattern, safeValue);
   });
+
+  // Inject script to fix external links - add noreferrer so external sites don't block referrer from sandboxed iframe
+  const fixLinksScript = `<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('a[href]').forEach(function(a) {
+    var href = a.getAttribute('href');
+    if (href && (href.startsWith('http') || href.startsWith('//') || href.startsWith('https'))) {
+      a.setAttribute('rel', 'noreferrer noopener');
+      a.setAttribute('target', '_blank');
+      a.setAttribute('referrerpolicy', 'no-referrer');
+    }
+  });
+});
+</script>`;
+
+  if (rendered.includes('</body>')) {
+    rendered = rendered.replace('</body>', fixLinksScript + '</body>');
+  } else {
+    rendered += fixLinksScript;
+  }
 
   return rendered;
 };
@@ -256,7 +279,7 @@ const TokoWebsitePage = () => {
       <iframe
         title="Website toko"
         srcDoc={htmlCode}
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
         style={{
           display: 'block',
           width: '100%',
